@@ -1,0 +1,57 @@
+from __future__ import annotations
+
+from collections.abc import Mapping
+from dataclasses import FrozenInstanceError
+
+import pytest
+
+from streamcase import Batch, batch
+
+
+def test_batch_preserves_row_order() -> None:
+    first = {"order_id": 1}
+    second = {"order_id": 2}
+
+    action = batch(first, second)
+
+    assert action.rows == (first, second)
+    assert isinstance(action, Batch)
+
+
+def test_batch_takes_a_snapshot_of_each_row() -> None:
+    row: dict[str, object] = {"status": "created"}
+
+    action = batch(row)
+    row["status"] = "cancelled"
+
+    assert action.rows[0]["status"] == "created"
+
+
+def test_batch_exposes_read_only_rows() -> None:
+    action = batch({"status": "created"})
+    exposed_row = action.rows[0]
+
+    assert isinstance(exposed_row, Mapping)
+    with pytest.raises(TypeError):
+        exposed_row["status"] = "cancelled"  # type: ignore[index]
+
+
+def test_batch_does_not_deep_freeze_values() -> None:
+    events = ["created"]
+    action = batch({"events": events})
+
+    events.append("paid")
+
+    assert action.rows[0]["events"] == ["created", "paid"]
+
+
+def test_batch_container_is_frozen() -> None:
+    action = batch({"order_id": 1})
+
+    with pytest.raises(FrozenInstanceError):
+        action.rows = ()  # type: ignore[misc]
+
+
+def test_batch_rejects_zero_rows() -> None:
+    with pytest.raises(ValueError, match="at least one row"):
+        batch()
