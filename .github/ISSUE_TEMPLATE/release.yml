@@ -1,0 +1,89 @@
+name: Release checklist
+description: Coordinate a Streamcase release from preparation through verification.
+title: "[Release]: "
+labels: ["release", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This maintainer-led form coordinates a real release. It does not authorize manual
+        uploads, bypass required checks, or replace the process in `docs/releasing.md`.
+
+  - type: input
+    id: target-version
+    attributes:
+      label: Target version
+      description: Enter the exact PEP 440 package version without the leading tag prefix.
+      placeholder: 0.1.0a1
+    validations:
+      required: true
+
+  - type: dropdown
+    id: release-kind
+    attributes:
+      label: Release kind
+      options:
+        - Alpha
+        - Beta
+        - Release candidate
+        - Stable
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and changelog context
+      description: Summarize the intended release and link the relevant milestone, issues, pull requests, or changelog section.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: preparation
+    attributes:
+      label: Preparation
+      description: Update these items as release preparation progresses.
+      options:
+        - label: The release scope and target version are approved.
+        - label: The release pull request updates the package version and changelog.
+        - label: The release pull request is approved, all required checks pass, and it is merged.
+        - label: CI is green on `main` for every supported Python and Spark line.
+        - label: Dependency, license, and security reports have been reviewed.
+        - label: The PyPI Trusted Publisher and protected `pypi` environment are ready.
+
+  - type: checkboxes
+    id: publication
+    attributes:
+      label: Publication
+      description: Never replace these automated steps with a workstation upload.
+      options:
+        - label: The signed version commit and matching `v`-prefixed tag are prepared from reviewed `main`.
+        - label: A draft GitHub release has accurate notes and identifies the matching tag.
+        - label: Publishing the GitHub release triggered the protected release workflow.
+        - label: The release workflow built, validated, and published the distributions successfully.
+
+  - type: checkboxes
+    id: verification
+    attributes:
+      label: Verification
+      description: Complete these checks before announcing the release.
+      options:
+        - label: The PyPI version, metadata, artifact names, and hashes are correct.
+        - label: The wheel installs into a clean supported environment.
+        - label: Importing `streamcase` reports the expected version.
+        - label: The README example passes against a supported Spark version.
+        - label: Release results, follow-up issues, and the announcement are recorded.
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes and follow-up
+      description: Record verification evidence, known limitations, or follow-up issue links.
+
+  - type: checkboxes
+    id: acknowledgement
+    attributes:
+      label: Maintainer acknowledgement
+      options:
+        - label: I understand that releases are produced by CI and must not be uploaded manually from a developer workstation.
+          required: true
