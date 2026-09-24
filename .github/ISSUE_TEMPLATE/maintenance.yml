@@ -1,0 +1,82 @@
+name: Maintenance task
+description: Propose focused repository, tooling, policy, or refactoring work.
+title: "[Maintenance]: "
+labels: ["maintenance", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for maintenance work without an intended user-visible behavior change.
+        Use the bug or feature form when runtime behavior is incorrect or should change.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Maintenance goal
+      description: Explain the current operational problem, debt, or recurring manual work.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe the smallest change that would address the maintenance goal.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Primary area
+      description: Select the area most affected by this work.
+      options:
+        - Core API and scenario model
+        - Spark integration
+        - Pytest integration
+        - Assertions and diagnostics
+        - Packaging and release engineering
+        - CI and repository automation
+        - Documentation infrastructure
+        - Governance and project policy
+        - Cross-cutting or other
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List observable conditions that will make the work complete.
+      placeholder: |
+        - [ ] The repeated manual step is automated
+        - [ ] Contributor documentation describes the new process
+    validations:
+      required: true
+
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: Non-goals
+      description: State what this issue deliberately will not change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: validation-risk
+    attributes:
+      label: Validation, risk, and rollback
+      description: Describe relevant checks, failure risks, and rollback steps, or explain why none apply.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and pull requests for the same maintenance work.
+          required: true
+        - label: This proposal is small enough for one focused pull request.
+          required: true
+
