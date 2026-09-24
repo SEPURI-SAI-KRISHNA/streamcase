@@ -15,6 +15,10 @@ Apache projects. The project is not an Apache Software Foundation project.
 
 Direct code commits to `main` are not accepted.
 
+Maintainers classify incoming work using the
+[issue triage and label guide](docs/maintainers/triage.md). Labels communicate
+scope and state, but do not replace acceptance criteria or review.
+
 ## Development setup
 
 Create and activate a virtual environment, then install development dependencies:
