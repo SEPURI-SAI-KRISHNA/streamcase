@@ -52,8 +52,29 @@ Use `ruff format .` to apply formatting locally.
 - Resolve every review conversation before merge.
 - Do not force-push after review unless necessary; explain rewritten history.
 
-At least one approving review and all required CI checks are expected before
-merge. The author does not approve their own pull request.
+All protected-branch checks must pass before merge. A pull request opened by a
+contributor requires approval from a maintainer who is not the author.
+
+While the project has only one maintainer, a maintainer-authored pull request
+cannot receive genuine independent approval from that same person. It may merge
+only after the maintainer:
+
+1. links a scoped issue and reviews the complete pull-request diff;
+2. confirms every required check passes;
+3. resolves every review conversation and records material decisions publicly;
+4. verifies that every commit carries the required DCO sign-off; and
+5. observes any additional waiting period, including the seven-day public-comment
+   period for governance changes.
+
+This process is a documented self-review, not an approval. The
+[CODEOWNERS](.github/CODEOWNERS) file records current responsibility and requests
+review where GitHub can do so; it does not bypass branch protection or turn an
+author's review into independent approval.
+
+When the project has a second active maintainer who can review without
+deadlocking development, branch protection should require at least one approving
+review and code-owner review. Until then, the issue, pull request, protected
+checks, conversation-resolution, and sign-off requirements remain mandatory.
 
 ## Commit sign-off
 
