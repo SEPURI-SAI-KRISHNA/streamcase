@@ -1,0 +1,72 @@
+name: Bug report
+description: Report reproducible incorrect behavior in Streamcase.
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues first. Do not disclose security vulnerabilities here.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Provide the smallest complete test that reproduces the issue.
+      render: python
+    validations:
+      required: true
+  - type: input
+    id: streamcase-version
+    attributes:
+      label: Streamcase version
+      placeholder: 0.1.0a1
+    validations:
+      required: true
+  - type: input
+    id: spark-version
+    attributes:
+      label: Spark version
+      placeholder: 3.5.6
+    validations:
+      required: true
+  - type: input
+    id: python-java
+    attributes:
+      label: Python and Java versions
+      placeholder: Python 3.11.9, Java 17.0.12
+    validations:
+      required: true
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: Operating system
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Remove credentials, tokens, internal paths, and private data.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and pull requests.
+          required: true
+        - label: This report does not contain a security vulnerability or secret.
+          required: true
+

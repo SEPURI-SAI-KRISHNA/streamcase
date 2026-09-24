@@ -1,0 +1,9 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Usage question or design discussion
+    url: https://github.com/SEPURI-SAI-KRISHNA/streamcase/discussions
+    about: Ask questions and discuss ideas before proposing large changes.
+  - name: Private security report
+    url: https://github.com/SEPURI-SAI-KRISHNA/streamcase/security/advisories/new
+    about: Report vulnerabilities privately instead of opening a public issue.
+
