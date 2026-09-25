@@ -9,6 +9,7 @@ All notable changes will be documented in this file. The format is based on
 ### Added
 
 - Immutable `Batch` scenario action and `batch()` convenience constructor.
+- Immutable `Restart` lifecycle action and `restart()` convenience constructor.
 - Initial package scaffold.
 - Packaging, licensing, governance, and contribution documentation.
 - Issue forms, pull-request template, and automated quality gates.

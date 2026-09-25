@@ -26,6 +26,16 @@ class Batch:
         object.__setattr__(self, "rows", snapshots)
 
 
+@dataclass(frozen=True, slots=True)
+class Restart:
+    """A checkpoint-preserving streaming-query restart boundary."""
+
+
 def batch(*rows: Mapping[str, object]) -> Batch:
     """Create a :class:`Batch` from one or more input rows."""
     return Batch(rows)
+
+
+def restart() -> Restart:
+    """Create a checkpoint-preserving restart action."""
+    return Restart()

@@ -1,6 +1,6 @@
 """Deterministic testing for Apache Spark Structured Streaming."""
 
 from streamcase._version import __version__
-from streamcase.actions import Batch, batch
+from streamcase.actions import Batch, Restart, batch, restart
 
-__all__ = ["Batch", "__version__", "batch"]
+__all__ = ["Batch", "Restart", "__version__", "batch", "restart"]
