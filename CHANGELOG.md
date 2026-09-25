@@ -17,3 +17,4 @@ All notable changes will be documented in this file. The format is based on
 ### Changed
 
 - Package and distribution metadata now read the version from one source.
+- Release automation now rejects tags that do not match the package version.
