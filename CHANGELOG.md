@@ -13,3 +13,7 @@ All notable changes will be documented in this file. The format is based on
 - Packaging, licensing, governance, and contribution documentation.
 - Issue forms, pull-request template, and automated quality gates.
 - Roadmap for incremental implementation.
+
+### Changed
+
+- Package and distribution metadata now read the version from one source.
