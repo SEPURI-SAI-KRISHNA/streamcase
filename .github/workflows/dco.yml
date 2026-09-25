@@ -1,0 +1,28 @@
+name: DCO
+
+on:
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: dco-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  signoff:
+    name: DCO sign-off
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Validate commit sign-offs
+        uses: KineticCafe/actions-dco@5f160e3ee086af8fc0fb567b8add0937d074123e # v3.2.0
+        with:
+          config: |
+            trailer-parsing = "strict"
+
+            [bots]
+            policy = "well-known"
+            categories = ["dependency-updaters"]

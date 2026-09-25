@@ -88,30 +88,24 @@ git commit -s -m "feat: add watermark action"
 The sign-off asserts that you have the right to submit the contribution under the
 project license. Read the DCO at <https://developercertificate.org/>.
 
-The DCO2 check validates every pull-request commit. Each trailer must use the
-following form, and its email address must match the commit author's email:
+The `DCO sign-off` check validates every non-merge human commit in a pull
+request. Each trailer must use the following form, and its name and email must
+match the commit author's or committer's identity:
 
 ```text
 Signed-off-by: Random J Developer <random@developer.example.org>
 ```
 
-When an unsigned commit has not been shared or reviewed, amend it with
-`git commit --amend --signoff`. Rewriting shared history can disrupt other
-contributors, so an author may instead add an individual remediation commit with
-this exact message structure:
+Amend an unsigned commit with `git commit --amend --signoff`. If more than one
+commit is missing a sign-off, rewrite each affected commit with an interactive
+rebase. Rewriting published commits changes their identifiers, so coordinate
+with other contributors and explain any necessary force-push on the pull
+request. A later remediation commit does not repair an earlier unsigned commit,
+and maintainers cannot override a failed check.
 
-```text
-DCO remediation commit for Random J Developer <random@developer.example.org>
-
-I, Random J Developer <random@developer.example.org>, hereby add my Signed-off-by to this commit: COMMIT_SHA
-
-Signed-off-by: Random J Developer <random@developer.example.org>
-```
-
-Add one `I, ...` line for each commit by that author requiring remediation. The
-remediation commit must be authored and signed off by the same person as the
-original commit. Third-party remediation and maintainer overrides are not
-accepted. GitHub web-based commits must also include a sign-off.
+Recognized dependency-update bots are exempt because they cannot certify the
+DCO as a person. Repository owners, maintainers, and other human contributors
+are not exempt. GitHub web-based commits must also include a sign-off.
 
 A DCO sign-off is a contribution certification. It is not a cryptographic commit
 signature, copyright assignment, or substitute for code review.
