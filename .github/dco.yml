@@ -1,4 +1,0 @@
-allowRemediationCommits:
-  individual: true
-  thirdParty: false
-allowOverrideAction: false
