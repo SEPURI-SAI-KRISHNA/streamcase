@@ -1,0 +1,23 @@
+"area: core":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/streamcase/**"
+
+"area: docs":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+          - "docs/**"
+
+"area: packaging":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "pyproject.toml"
+          - "src/streamcase/py.typed"
+
+"area: ci":
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/workflows/**"
+          - ".github/dependabot.yml"
+          - ".github/labeler.yml"
