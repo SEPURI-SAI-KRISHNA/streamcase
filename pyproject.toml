@@ -119,6 +119,7 @@ addopts = [
   "--strict-markers",
   "-ra",
 ]
+pythonpath = ["."]
 testpaths = ["tests"]
 markers = [
   "spark: integration tests that require PySpark and a compatible Java runtime",
