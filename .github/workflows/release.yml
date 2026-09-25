@@ -22,6 +22,11 @@ jobs:
           python-version: "3.11"
           cache: pip
 
+      - name: Validate release tag
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: python scripts/check_release_tag.py "$RELEASE_TAG"
+
       - name: Install build tools
         run: python -m pip install "build>=1.2,<2" "twine>=7,<8"
 
