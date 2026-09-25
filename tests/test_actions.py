@@ -5,7 +5,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from streamcase import Batch, batch
+from streamcase import Batch, Restart, batch, restart
 
 
 def test_batch_preserves_row_order() -> None:
@@ -55,3 +55,15 @@ def test_batch_container_is_frozen() -> None:
 def test_batch_rejects_zero_rows() -> None:
     with pytest.raises(ValueError, match="at least one row"):
         batch()
+
+
+def test_restart_factory_returns_restart_action() -> None:
+    assert isinstance(restart(), Restart)
+
+
+def test_restart_actions_have_stable_value_equality() -> None:
+    assert restart() == Restart()
+
+
+def test_restart_action_has_no_mutable_instance_namespace() -> None:
+    assert not hasattr(restart(), "__dict__")
