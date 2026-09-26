@@ -57,6 +57,11 @@ def test_batch_rejects_zero_rows() -> None:
         batch()
 
 
+def test_batch_rejects_non_string_key_with_row_index_and_key_type() -> None:
+    with pytest.raises(TypeError, match=r"row at index 1.*type int"):
+        batch({"order_id": 1}, {2: "created"})  # type: ignore[dict-item]
+
+
 def test_restart_factory_returns_restart_action() -> None:
     assert isinstance(restart(), Restart)
 
