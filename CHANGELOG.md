@@ -10,6 +10,7 @@ All notable changes will be documented in this file. The format is based on
 
 - Immutable `Batch` scenario action and `batch()` convenience constructor.
 - Immutable `Restart` lifecycle action and `restart()` convenience constructor.
+- Immutable ordered `Scenario` model and `scenario()` convenience constructor.
 - Initial package scaffold.
 - Packaging, licensing, governance, and contribution documentation.
 - Issue forms, pull-request template, and automated quality gates.
