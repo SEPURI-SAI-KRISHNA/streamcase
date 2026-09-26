@@ -1,0 +1,52 @@
+name: Self-assign maintainer items
+
+on:
+  issues:
+    types:
+      - opened
+  pull_request_target:
+    types:
+      - opened
+
+permissions: {}
+
+jobs:
+  assign-issue:
+    name: Assign maintainer issue
+    if: github.event_name == 'issues' && github.actor == 'SEPURI-SAI-KRISHNA'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Assign issue
+        env:
+          ASSIGNEE: SEPURI-SAI-KRISHNA
+          GH_TOKEN: ${{ github.token }}
+          ITEM_NUMBER: ${{ github.event.issue.number }}
+        run: >-
+          gh api --method POST
+          "repos/${GITHUB_REPOSITORY}/issues/${ITEM_NUMBER}/assignees"
+          --raw-field "assignees[]=${ASSIGNEE}"
+          --silent
+
+  assign-pull-request:
+    name: Assign maintainer pull request
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      github.actor == 'SEPURI-SAI-KRISHNA'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Assign pull request
+        env:
+          ASSIGNEE: SEPURI-SAI-KRISHNA
+          GH_TOKEN: ${{ github.token }}
+          ITEM_NUMBER: ${{ github.event.pull_request.number }}
+        run: >-
+          gh api --method POST
+          "repos/${GITHUB_REPOSITORY}/issues/${ITEM_NUMBER}/assignees"
+          --raw-field "assignees[]=${ASSIGNEE}"
+          --silent

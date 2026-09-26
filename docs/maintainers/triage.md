@@ -10,6 +10,13 @@ label, no more than one workflow-state label, and any number of relevant area,
 automation, or impact labels. Priority labels are intentionally omitted until the
 project has enough competing work to apply them consistently.
 
+## Assignment
+
+Issues and pull requests opened by `SEPURI-SAI-KRISHNA` are automatically
+assigned to that maintainer. Items opened by other contributors remain
+unassigned until triage so ownership reflects an explicit maintainer decision.
+Assignment does not replace review, CODEOWNERS, labels, or workflow state.
+
 ## Kind of work
 
 Apply one kind label to describe the primary reason for the change.
