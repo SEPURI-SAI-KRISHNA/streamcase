@@ -12,7 +12,8 @@ class Batch:
     """One non-empty logical batch of input rows.
 
     Row mappings are copied when the batch is created and exposed as read-only
-    mappings. Values inside a row are not recursively copied or frozen.
+    mappings. Every row key must be a string. Values inside a row are not
+    recursively copied or frozen.
     """
 
     rows: tuple[Mapping[str, object], ...]
@@ -22,6 +23,15 @@ class Batch:
         snapshots = tuple(MappingProxyType(dict(row)) for row in rows)
         if not snapshots:
             raise ValueError("Batch must contain at least one row.")
+
+        for row_index, row in enumerate(snapshots):
+            for key in row:
+                if not isinstance(key, str):
+                    message = (
+                        f"Batch row at index {row_index} contains a non-string key "
+                        f"of type {type(key).__name__}."
+                    )
+                    raise TypeError(message)
 
         object.__setattr__(self, "rows", snapshots)
 
