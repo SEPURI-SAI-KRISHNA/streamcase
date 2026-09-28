@@ -6,9 +6,9 @@
 Streamcase is a planned pytest-oriented toolkit for deterministic Apache Spark
 Structured Streaming tests.
 
-> **Status:** project scaffold only. No streaming test API has been implemented or
-> published yet. Development will proceed through small, issue-linked pull
-> requests.
+> **Status:** early development. The backend-independent scenario model is
+> implemented, but Spark execution, result assertions, and a published release
+> are not available yet.
 
 ## Problem
 
@@ -17,9 +17,15 @@ micro-batch boundaries, late data, watermarks, checkpoint restarts, or state
 growth. Streamcase will make those behaviors explicit and reproducible in Python
 tests while executing against Spark's public Structured Streaming interfaces.
 
+## Available today
+
+Streamcase can describe immutable logical input batches and checkpoint-preserving
+restart boundaries without importing PySpark. See the
+[Phase 1 scenario model guide](docs/scenario-model.md) for the public API,
+validation rules, and internal serialization contract.
+
 ## Planned capabilities
 
-- declarative input batches and lifecycle actions;
 - deterministic file-backed micro-batch execution;
 - explicit stop and restart using the same checkpoint;
 - output-row and duplicate-key assertions;
@@ -27,8 +33,8 @@ tests while executing against Spark's public Structured Streaming interfaces.
 - pytest fixtures;
 - compatibility testing across supported Spark releases.
 
-These items are roadmap goals, not current package features. Each capability will
-have its own issue, tests, documentation, and pull request.
+These items are roadmap goals, not current package features. Each capability has
+its own issue, tests, documentation, and pull request.
 
 ## Repository status
 
@@ -43,7 +49,7 @@ This bootstrap establishes:
 See [ROADMAP.md](ROADMAP.md) for the planned delivery sequence and
 [docs/architecture.md](docs/architecture.md) for the proposed technical shape.
 
-## Local scaffold checks
+## Local checks
 
 ```shell
 python -m venv .venv
@@ -71,4 +77,3 @@ Software Foundation.
 ## License
 
 Licensed under the [Apache License 2.0](LICENSE).
-
