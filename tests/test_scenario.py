@@ -36,9 +36,10 @@ def test_scenario_container_is_frozen() -> None:
 
 
 def test_scenario_has_stable_value_equality() -> None:
-    action = batch({"order_id": 1})
+    first = batch({"order_id": 1})
+    second = batch({"order_id": 2})
 
-    assert scenario(action, restart()) == Scenario((action, restart()))
+    assert scenario(first, restart(), second) == Scenario((first, restart(), second))
 
 
 def test_scenario_rejects_zero_actions() -> None:
@@ -49,3 +50,23 @@ def test_scenario_rejects_zero_actions() -> None:
 def test_scenario_rejects_unsupported_action_with_index() -> None:
     with pytest.raises(TypeError, match=r"index 1.*got str"):
         Scenario([batch({"order_id": 1}), "restart"])  # type: ignore[list-item]
+
+
+def test_scenario_rejects_leading_restart_with_index() -> None:
+    with pytest.raises(ValueError, match=r"index 0.*cannot be first"):
+        scenario(restart(), batch({"order_id": 1}))
+
+
+def test_scenario_rejects_trailing_restart_with_index() -> None:
+    with pytest.raises(ValueError, match=r"index 1.*cannot be last"):
+        scenario(batch({"order_id": 1}), restart())
+
+
+def test_scenario_rejects_consecutive_restart_with_second_index() -> None:
+    with pytest.raises(ValueError, match=r"index 2.*follow another Restart"):
+        scenario(
+            batch({"order_id": 1}),
+            restart(),
+            restart(),
+            batch({"order_id": 2}),
+        )
