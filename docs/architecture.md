@@ -3,9 +3,10 @@
 ## Design goals
 
 Streamcase aims to make small streaming tests deterministic, readable, isolated,
-and diagnosable. This document describes the proposed architecture; only the
-package scaffold currently exists. Streamcase will not emulate Spark. Tests will
-execute through Spark's public Structured Streaming interfaces.
+and diagnosable. The backend-independent
+[scenario model](scenario-model.md) is implemented; the runner and result layers
+below remain proposed. Streamcase will not emulate Spark. Tests will execute
+through Spark's public Structured Streaming interfaces.
 
 ## Execution model
 
