@@ -42,6 +42,13 @@ progress into ordinary dictionaries.
 - The result object contains no live Spark or JVM objects.
 - Checkpoints are opaque to Streamcase and are never edited.
 
+## Result and assertion model
+
+The accepted [result and assertion API decision](design/0001-result-assertion-api.md)
+defines immutable captured batches, scenario results, duplicate-aware unordered
+row comparison, batch-count assertions, and unique-key assertions. Phase 2
+implements that contract without importing PySpark.
+
 ## Compatibility
 
 Spark version differences are isolated in progress normalization and the runner.
