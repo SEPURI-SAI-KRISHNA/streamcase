@@ -30,8 +30,23 @@ def test_batch_json_lines_encoding_preserves_row_order_and_unicode() -> None:
 
 @pytest.mark.parametrize("value", [math.nan, math.inf, -math.inf])
 def test_batch_json_lines_encoding_rejects_non_finite_floats(value: float) -> None:
-    with pytest.raises(ValueError, match="Out of range float values"):
+    with pytest.raises(
+        ValueError,
+        match=r"row at index 0.*Out of range float values",
+    ) as error_info:
         _encode_batch_json_lines(batch({"value": value}))
+
+    assert isinstance(error_info.value.__cause__, ValueError)
+
+
+def test_batch_json_lines_encoding_reports_unsupported_value_row() -> None:
+    with pytest.raises(
+        TypeError,
+        match=r"row at index 1.*Object of type object is not JSON serializable",
+    ) as error_info:
+        _encode_batch_json_lines(batch({"value": "valid"}, {"value": object()}))
+
+    assert isinstance(error_info.value.__cause__, TypeError)
 
 
 def test_batch_json_lines_encoder_is_not_exported() -> None:
