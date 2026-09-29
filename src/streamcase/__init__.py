@@ -2,7 +2,7 @@
 
 from streamcase._version import __version__
 from streamcase.actions import Batch, Restart, batch, restart
-from streamcase.assertions import assert_rows_equal
+from streamcase.assertions import assert_batch_count, assert_rows_equal
 from streamcase.results import CapturedBatch, ScenarioResult
 from streamcase.scenario import Action, Scenario, scenario
 
@@ -14,6 +14,7 @@ __all__ = [
     "Scenario",
     "ScenarioResult",
     "__version__",
+    "assert_batch_count",
     "assert_rows_equal",
     "batch",
     "restart",

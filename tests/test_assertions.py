@@ -4,7 +4,51 @@ import math
 
 import pytest
 
-from streamcase import CapturedBatch, ScenarioResult, assert_rows_equal
+from streamcase import CapturedBatch, ScenarioResult, assert_batch_count, assert_rows_equal
+
+
+def test_assert_batch_count_includes_empty_captured_batches() -> None:
+    result = ScenarioResult(
+        [
+            CapturedBatch(0, []),
+            CapturedBatch(1, [{"order_id": 1001}]),
+        ],
+    )
+
+    assert_batch_count(result, 2)
+
+
+def test_assert_batch_count_accepts_empty_result() -> None:
+    assert_batch_count(ScenarioResult([]), 0)
+
+
+def test_assert_batch_count_reports_expected_and_actual_counts() -> None:
+    result = ScenarioResult([CapturedBatch(0, [])])
+
+    with pytest.raises(
+        AssertionError,
+        match=r"Expected 2 captured batch\(es\), got 1",
+    ):
+        assert_batch_count(result, 2)
+
+
+@pytest.mark.parametrize("expected_count", [True, 1.5, "1"])
+def test_assert_batch_count_rejects_non_integer_count(expected_count: object) -> None:
+    with pytest.raises(
+        TypeError,
+        match=rf"expected_count must be an int; got {type(expected_count).__name__}",
+    ):
+        assert_batch_count(ScenarioResult([]), expected_count)  # type: ignore[arg-type]
+
+
+def test_assert_batch_count_rejects_negative_count() -> None:
+    with pytest.raises(ValueError, match="expected_count must be non-negative"):
+        assert_batch_count(ScenarioResult([]), -1)
+
+
+def test_assert_batch_count_rejects_non_result_argument() -> None:
+    with pytest.raises(TypeError, match="result must be a ScenarioResult; got list"):
+        assert_batch_count([], 0)  # type: ignore[arg-type]
 
 
 def test_assert_rows_equal_ignores_row_and_mapping_key_order() -> None:

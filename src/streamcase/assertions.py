@@ -9,6 +9,23 @@ from typing import cast
 from streamcase.results import CapturedBatch, ScenarioResult
 
 
+def assert_batch_count(result: ScenarioResult, expected_count: int) -> None:
+    """Assert the exact number of captured output batches."""
+    if not isinstance(result, ScenarioResult):
+        message = f"result must be a ScenarioResult; got {type(result).__name__}."
+        raise TypeError(message)
+    if isinstance(expected_count, bool) or not isinstance(expected_count, int):
+        message = f"expected_count must be an int; got {type(expected_count).__name__}."
+        raise TypeError(message)
+    if expected_count < 0:
+        raise ValueError("expected_count must be non-negative.")
+
+    actual_count = len(result.batches)
+    if actual_count != expected_count:
+        message = f"Expected {expected_count} captured batch(es), got {actual_count}."
+        raise AssertionError(message)
+
+
 def _values_equal(left: object, right: object) -> bool:
     if type(left) is not type(right):
         return False
