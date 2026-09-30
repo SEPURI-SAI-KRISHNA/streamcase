@@ -7,13 +7,21 @@ Apache projects. The project is not an Apache Software Foundation project.
 
 1. Search existing issues and pull requests.
 2. Open an issue describing the problem, proposed behavior, and acceptance
-   criteria.
+   criteria. Use the
+   [design proposal form](https://github.com/SEPURI-SAI-KRISHNA/streamcase/issues/new?template=design.yml)
+   for public API, architecture, compatibility, backend, or other consequential
+   decisions.
 3. Wait for scope agreement when the change affects public APIs, compatibility,
    security, or architecture.
 4. Create a branch containing the issue number, such as
    `feat/123-watermark-actions` or `fix/456-progress-parsing`.
 
 Direct code commits to `main` are not accepted.
+
+Significant changes remain labeled `needs-decision` until their contract and
+rationale are recorded publicly. Merging an issue-linked design record accepts
+the decision; implementation continues through separate focused issues and pull
+requests.
 
 Maintainers classify incoming work using the
 [issue triage and label guide](docs/maintainers/triage.md). Labels communicate
