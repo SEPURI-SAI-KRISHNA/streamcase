@@ -1,0 +1,91 @@
+name: Design proposal
+description: Propose a public API, architecture, compatibility, or backend decision.
+title: "[Design]: "
+labels: ["enhancement", "needs-decision"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for consequential decisions that need public rationale before implementation.
+        Use the feature form for a focused capability that does not require an architecture or compatibility decision.
+        Report suspected vulnerabilities through private security reporting.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and problem
+      description: Explain the user or contributor problem, current constraints, and why a decision is needed.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: decision-area
+    attributes:
+      label: Decision area
+      options:
+        - Public Python API
+        - Core data model or assertions
+        - Spark runner or query lifecycle
+        - Python, Java, or Spark compatibility
+        - Packaging, release, or supply chain
+        - Pytest integration
+        - New backend or extension
+        - Cross-cutting architecture
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed contract
+      description: Describe the proposed behavior and include a small API or execution example when applicable.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe credible alternatives, including retaining the current behavior, and why they were not preferred.
+    validations:
+      required: true
+
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility, risks, and migration
+      description: Identify affected users, versions, failure modes, migration needs, and rollback options.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List observable conditions that make the decision and its first implementation complete.
+      placeholder: |
+        - [ ] The chosen contract is recorded in a reviewed design document
+        - [ ] Compatibility behavior is covered by tests
+        - [ ] User documentation explains the approved behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: Non-goals
+      description: State adjacent behavior that this proposal deliberately excludes.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues, pull requests, discussions, and design records.
+          required: true
+        - label: I understand that implementation waits until the decision is recorded publicly.
+          required: true
+        - label: This proposal contains no vulnerability details, credentials, secrets, or private data.
+          required: true

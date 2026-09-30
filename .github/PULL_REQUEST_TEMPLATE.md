@@ -1,25 +1,44 @@
-## Summary
+## What changes are proposed?
 
-<!-- Explain the problem and the approach in a few sentences. -->
+<!-- Describe the focused change. Prefer observable behavior over file lists. -->
+
+## Why are these changes needed?
+
+<!-- Explain the user, contributor, or operational problem being solved. -->
+
+## Related issue
+
+<!-- Every material pull request must close or link a scoped issue. -->
 
 Closes #
 
-## Changes
+## Does this introduce a user-facing change?
+
+<!-- Answer yes or no. Describe public API, behavior, documentation, or migration impact. -->
+
+## How was this tested?
+
+<!-- List exact commands and outcomes. State why a check is not applicable instead of marking it complete. -->
 
 -
 
-## Validation
+## Compatibility, risk, and rollback
 
-<!-- List the exact checks run and their outcomes. -->
+<!-- Cover Python/Spark compatibility, failure risk, and how this change can be reverted safely. -->
 
-- [ ] Unit tests pass.
-- [ ] Relevant Spark integration tests pass.
-- [ ] Ruff formatting and lint checks pass.
-- [ ] Mypy passes.
-- [ ] Documentation and changelog are updated when needed.
-- [ ] Commits include a DCO sign-off.
+- Compatibility:
+- Risk:
+- Rollback:
 
-## Compatibility and risk
+## Documentation and follow-up
 
-<!-- Note Spark/Python compatibility impact, risks, and rollback considerations. -->
+<!-- Link documentation, changelog, or follow-up issues. Explain when none are needed. -->
 
+## Checklist
+
+- [ ] The pull request is linked to a scoped issue.
+- [ ] Tests cover the observable change, or the testing exception is explained.
+- [ ] User and contributor documentation is updated, or non-applicability is explained.
+- [ ] Compatibility and rollback impact has been evaluated.
+- [ ] No credentials, secrets, private data, or unsafe logs are included.
+- [ ] Every human-authored commit includes the required DCO sign-off.
