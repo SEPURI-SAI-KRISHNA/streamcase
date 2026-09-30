@@ -57,6 +57,67 @@ def _values_equal(left: object, right: object) -> bool:
     return left == right
 
 
+def assert_unique_keys(result: ScenarioResult, *fields: str) -> None:
+    """Assert that selected fields form unique keys across all result rows."""
+    if not isinstance(result, ScenarioResult):
+        message = f"result must be a ScenarioResult; got {type(result).__name__}."
+        raise TypeError(message)
+    if not fields:
+        raise ValueError("At least one key field is required.")
+
+    seen_fields: set[str] = set()
+    for index, field in enumerate(fields):
+        if not isinstance(field, str):
+            message = f"Key field at index {index} must be a string; got {type(field).__name__}."
+            raise TypeError(message)
+        if field in seen_fields:
+            raise ValueError(f"Key fields must be unique; repeated {field!r}.")
+        seen_fields.add(field)
+
+    groups: list[tuple[tuple[object, ...], list[tuple[int, int]]]] = []
+    for captured_batch in result.batches:
+        for row_index, row in enumerate(captured_batch.rows):
+            missing_fields = tuple(field for field in fields if field not in row)
+            if missing_fields:
+                message = (
+                    f"Result row at batch {captured_batch.batch_id} row {row_index} "
+                    f"is missing key field(s): {missing_fields!r}."
+                )
+                raise AssertionError(message)
+
+            key = tuple(row[field] for field in fields)
+            matched_locations: list[tuple[int, int]] | None = None
+            for existing_key, locations in groups:
+                if _values_equal(key, existing_key):
+                    matched_locations = locations
+                    break
+
+            location = (captured_batch.batch_id, row_index)
+            if matched_locations is None:
+                groups.append((key, [location]))
+            else:
+                matched_locations.append(location)
+
+    duplicate_messages: list[str] = []
+    for key, locations in groups:
+        if len(locations) < 2:
+            continue
+
+        rendered_key = ", ".join(
+            f"{field}={value!r}" for field, value in zip(fields, key, strict=True)
+        )
+        rendered_locations = ", ".join(
+            f"batch {batch_id} row {row_index}" for batch_id, row_index in locations
+        )
+        duplicate_messages.append(
+            f"Duplicate key ({rendered_key}) occurred {len(locations)} times at "
+            f"{rendered_locations}."
+        )
+
+    if duplicate_messages:
+        raise AssertionError(" ".join(duplicate_messages))
+
+
 def assert_rows_equal(
     result: ScenarioResult,
     expected_rows: Iterable[Mapping[str, object]],
