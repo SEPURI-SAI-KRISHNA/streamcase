@@ -6,6 +6,12 @@ import math
 from collections.abc import Iterable, Mapping
 from typing import cast
 
+from streamcase._diagnostics import (
+    _format_batch_count_mismatch,
+    _format_duplicate_keys,
+    _format_missing_key_fields,
+    _format_rows_mismatch,
+)
 from streamcase.results import CapturedBatch, ScenarioResult
 
 
@@ -22,8 +28,7 @@ def assert_batch_count(result: ScenarioResult, expected_count: int) -> None:
 
     actual_count = len(result.batches)
     if actual_count != expected_count:
-        message = f"Expected {expected_count} captured batch(es), got {actual_count}."
-        raise AssertionError(message)
+        raise AssertionError(_format_batch_count_mismatch(expected_count, actual_count))
 
 
 def _values_equal(left: object, right: object) -> bool:
@@ -79,11 +84,13 @@ def assert_unique_keys(result: ScenarioResult, *fields: str) -> None:
         for row_index, row in enumerate(captured_batch.rows):
             missing_fields = tuple(field for field in fields if field not in row)
             if missing_fields:
-                message = (
-                    f"Result row at batch {captured_batch.batch_id} row {row_index} "
-                    f"is missing key field(s): {missing_fields!r}."
+                raise AssertionError(
+                    _format_missing_key_fields(
+                        captured_batch.batch_id,
+                        row_index,
+                        missing_fields,
+                    ),
                 )
-                raise AssertionError(message)
 
             key = tuple(row[field] for field in fields)
             matched_locations: list[tuple[int, int]] | None = None
@@ -98,24 +105,14 @@ def assert_unique_keys(result: ScenarioResult, *fields: str) -> None:
             else:
                 matched_locations.append(location)
 
-    duplicate_messages: list[str] = []
+    duplicates: list[tuple[tuple[str, ...], tuple[object, ...], tuple[tuple[int, int], ...]]] = []
     for key, locations in groups:
         if len(locations) < 2:
             continue
+        duplicates.append((fields, key, tuple(locations)))
 
-        rendered_key = ", ".join(
-            f"{field}={value!r}" for field, value in zip(fields, key, strict=True)
-        )
-        rendered_locations = ", ".join(
-            f"batch {batch_id} row {row_index}" for batch_id, row_index in locations
-        )
-        duplicate_messages.append(
-            f"Duplicate key ({rendered_key}) occurred {len(locations)} times at "
-            f"{rendered_locations}."
-        )
-
-    if duplicate_messages:
-        raise AssertionError(" ".join(duplicate_messages))
+    if duplicates:
+        raise AssertionError(_format_duplicate_keys(duplicates))
 
 
 def assert_rows_equal(
@@ -146,13 +143,11 @@ def assert_rows_equal(
     if not missing and not unmatched_actual:
         return
 
-    details = [
-        f"Rows differ: expected {len(expected)} row(s), captured {len(result.rows)}.",
-    ]
-    if missing:
-        missing_rows = tuple(dict(row) for row in missing)
-        details.append(f"Missing rows ({len(missing)}): {missing_rows!r}.")
-    if unmatched_actual:
-        unexpected_rows = tuple(dict(row) for row in unmatched_actual)
-        details.append(f"Unexpected rows ({len(unmatched_actual)}): {unexpected_rows!r}.")
-    raise AssertionError(" ".join(details))
+    raise AssertionError(
+        _format_rows_mismatch(
+            len(expected),
+            len(result.rows),
+            missing,
+            unmatched_actual,
+        ),
+    )
