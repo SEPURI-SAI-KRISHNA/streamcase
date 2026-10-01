@@ -46,8 +46,9 @@ progress into ordinary dictionaries.
 
 The accepted [result and assertion API decision](design/0001-result-assertion-api.md)
 defines immutable captured batches, scenario results, duplicate-aware unordered
-row comparison, batch-count assertions, and unique-key assertions. Phase 2
-implements that contract without importing PySpark.
+row comparison, batch-count assertions, and unique-key assertions. The
+[results and assertions guide](results-and-assertions.md) documents the
+implemented contract, which does not import PySpark.
 
 ## Compatibility
 
