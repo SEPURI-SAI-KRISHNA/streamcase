@@ -40,6 +40,9 @@ Issues = "https://github.com/SEPURI-SAI-KRISHNA/streamcase/issues"
 Repository = "https://github.com/SEPURI-SAI-KRISHNA/streamcase"
 
 [project.optional-dependencies]
+spark = [
+  "pyspark>=4.2,<4.3",
+]
 test = [
   "pytest>=8.3,<10",
   "pytest-cov>=6,<8",
