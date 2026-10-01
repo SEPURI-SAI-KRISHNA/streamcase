@@ -7,8 +7,8 @@ Streamcase is a planned pytest-oriented toolkit for deterministic Apache Spark
 Structured Streaming tests.
 
 > **Status:** early development. The backend-independent scenario model is
-> implemented, but Spark execution, result assertions, and a published release
-> are not available yet.
+> implemented together with immutable result models and assertions, but Spark
+> execution and a published release are not available yet.
 
 ## Problem
 
@@ -20,15 +20,15 @@ tests while executing against Spark's public Structured Streaming interfaces.
 ## Available today
 
 Streamcase can describe immutable logical input batches and checkpoint-preserving
-restart boundaries without importing PySpark. See the
-[Phase 1 scenario model guide](docs/scenario-model.md) for the public API,
-validation rules, and internal serialization contract.
+restart boundaries, represent captured output, and assert row equality, batch
+counts, and unique keys without importing PySpark. See the
+[scenario model guide](docs/scenario-model.md) and
+[results and assertions guide](docs/results-and-assertions.md).
 
 ## Planned capabilities
 
 - deterministic file-backed micro-batch execution;
 - explicit stop and restart using the same checkpoint;
-- output-row and duplicate-key assertions;
 - progress, watermark, and state-store assertions;
 - pytest fixtures;
 - compatibility testing across supported Spark releases.
