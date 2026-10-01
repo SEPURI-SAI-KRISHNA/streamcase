@@ -5,7 +5,8 @@
 Streamcase aims to make small streaming tests deterministic, readable, isolated,
 and diagnosable. The backend-independent
 [scenario model](scenario-model.md) is implemented; the runner and result layers
-below remain proposed. Streamcase will not emulate Spark. Tests will execute
+are being delivered separately. The result layer is implemented and the runner
+below remains proposed. Streamcase will not emulate Spark. Tests will execute
 through Spark's public Structured Streaming interfaces.
 
 ## Execution model
@@ -20,19 +21,23 @@ one JSON file per Batch ---> Spark file stream ---> user pipeline
 checkpoint <--- stop/start action           foreachBatch capture
                                                   |
                                                   v
-                                      rows + progress + assertions
+                                      rows + result assertions
 ```
 
-The planned `run()` call will receive an isolated directory containing its input
-and checkpoint data. `maxFilesPerTrigger=1` will preserve logical batch
+The planned `run_scenario()` call will create an isolated directory containing
+its input and checkpoint data. `maxFilesPerTrigger=1` will preserve logical batch
 boundaries. After writing a file atomically, Streamcase will call
 `processAllAvailable()`, which Spark documents as a testing-oriented
 synchronization method.
 
-A planned `Restart` action will stop the active query and start the same
-transformed streaming DataFrame with the same checkpoint. The proposed runner
-will record rows in the Python driver through `foreachBatch` and deep-copy
-progress into ordinary dictionaries.
+A planned `Restart` action will stop the active query and recreate the source,
+transformation, and query with the same checkpoint. The proposed runner will
+record rows in the Python driver through `foreachBatch` and normalize them into
+the backend-independent result objects.
+
+The accepted [Spark runner API and ownership decision](design/0002-spark-runner-api.md)
+defines a caller-owned `SparkSession`, the optional `streamcase.spark`
+namespace, deterministic source/query configuration, and runner-owned cleanup.
 
 ## Boundaries
 
@@ -52,7 +57,7 @@ implemented contract, which does not import PySpark.
 
 ## Compatibility
 
-Spark version differences are isolated in progress normalization and the runner.
+Spark version differences are isolated in the optional runner implementation.
 The public action and result objects do not import PySpark at runtime. PySpark is
 an optional dependency so assertion-only consumers and documentation tooling stay
 lightweight.
