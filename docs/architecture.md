@@ -62,6 +62,9 @@ The public action and result objects do not import PySpark at runtime. PySpark i
 an optional dependency so assertion-only consumers and documentation tooling stay
 lightweight.
 
+The [Spark compatibility policy](spark-compatibility.md) defines the initial
+tested version line and installation extra.
+
 ## Future extensions
 
 Kafka sources, Delta sinks, watermark-control helpers, and PyFlink support require

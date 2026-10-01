@@ -17,6 +17,25 @@ micro-batch boundaries, late data, watermarks, checkpoint restarts, or state
 growth. Streamcase will make those behaviors explicit and reproducible in Python
 tests while executing against Spark's public Structured Streaming interfaces.
 
+## Installation
+
+Install the lightweight backend-independent package with:
+
+```shell
+python -m pip install streamcase
+```
+
+Install the approved PySpark line for the planned Spark runner with:
+
+```shell
+python -m pip install "streamcase[spark]"
+```
+
+The runner is not implemented yet. The extra establishes its reproducible
+dependency path without making PySpark a core dependency. See the
+[Spark compatibility policy](docs/spark-compatibility.md) for the supported
+Python, Java, and Spark combination.
+
 ## Available today
 
 Streamcase can describe immutable logical input batches and checkpoint-preserving

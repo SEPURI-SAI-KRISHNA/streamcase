@@ -8,6 +8,8 @@ All notable changes will be documented in this file. The format is based on
 
 ### Added
 
+- Optional `spark` extra for the supported PySpark 4.2 line and its compatibility
+  policy.
 - Immutable `Batch` scenario action and `batch()` convenience constructor.
 - Immutable `Restart` lifecycle action and `restart()` convenience constructor.
 - Immutable ordered `Scenario` model and `scenario()` convenience constructor.
