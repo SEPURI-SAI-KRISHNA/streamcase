@@ -55,8 +55,7 @@ def run_scenario(
     query_options: Mapping[str, str] | None = None,
     base_dir: str | PathLike[str] | None = None,
     retain_artifacts: bool = False,
-) -> ScenarioResult:
-    ...
+) -> ScenarioResult: ...
 ```
 
 `schema` and `transform` are keyword-only because reversing them or relying on
