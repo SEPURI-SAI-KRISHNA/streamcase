@@ -8,6 +8,8 @@ All notable changes will be documented in this file. The format is based on
 
 ### Added
 
+- A deterministic Spark JSON file-stream source with explicit schemas and
+  runner-owned discovery options.
 - Atomic publication of deterministic JSON Lines files for scenario batches.
 - Isolated runner-owned input, checkpoint, and temporary directory layouts.
 - Dedicated Java 17 and PySpark 4.2 integration-test CI lane.
