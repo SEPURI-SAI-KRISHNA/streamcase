@@ -110,6 +110,21 @@ overwriting it. Failed writes or renames remove the writer's temporary file and
 do not advance the monotonic index. The writer is private and sequential;
 parallel publication within one run is not supported.
 
+## Spark JSON input source
+
+The private Spark source builder requires an explicit schema before it accesses
+the caller-owned session. It reads JSON from the isolated `input/` directory with
+`maxFilesPerTrigger=1`, single-line records, and fail-fast malformed-input
+handling. The returned DataFrame is streaming, but constructing it does not start
+a query.
+
+Caller source options are copied and may configure non-conflicting JSON decoding
+details such as date, timestamp, and locale formats. Option names are checked
+case-insensitively. Streamcase rejects options that control paths, file discovery,
+schema inference, record boundaries, malformed-input behavior, or files per
+trigger before accessing Spark. This keeps directory ownership and logical batch
+boundaries under the runner's control without mutating caller mappings.
+
 ## Future extensions
 
 Kafka sources, Delta sinks, watermark-control helpers, and PyFlink support require
