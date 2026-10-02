@@ -92,6 +92,24 @@ temporary-directory APIs rather than assuming a path separator.
 Batch file publication, checkpoint contents, Spark query lifecycle, and
 distributed filesystems are outside the directory layout's responsibility.
 
+## Atomic batch publication
+
+One private writer instance publishes a scenario's `Batch` actions sequentially.
+It uses the deterministic JSON Lines encoder and assigns zero-based, monotonic
+names such as `batch-00000000000000000000.json`.
+
+The complete batch is encoded before filesystem changes. The writer then creates
+a hidden temporary file beside the destination in `input/` using exclusive file
+creation, writes UTF-8 with LF line endings, flushes and synchronizes the file,
+and performs a same-directory rename to the visible name. Spark therefore never
+sees a final path containing partial content. The separate `temporary/` directory
+remains available for other runner-owned working files.
+
+An existing temporary or destination path is a collision and fails without
+overwriting it. Failed writes or renames remove the writer's temporary file and
+do not advance the monotonic index. The writer is private and sequential;
+parallel publication within one run is not supported.
+
 ## Future extensions
 
 Kafka sources, Delta sinks, watermark-control helpers, and PyFlink support require
