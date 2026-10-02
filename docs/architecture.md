@@ -125,6 +125,21 @@ schema inference, record boundaries, malformed-input behavior, or files per
 trigger before accessing Spark. This keeps directory ownership and logical batch
 boundaries under the runner's control without mutating caller mappings.
 
+## Driver-side batch capture
+
+One private capture object owns the `foreachBatch` callback state for a runner
+invocation. Each callback collects its intentionally small output DataFrame on
+the driver, recursively converts Spark rows into ordinary Python mappings and
+sequences, and constructs an immutable `CapturedBatch` with Spark's batch
+identifier. No DataFrame, Spark `Row`, JVM handle, or mutable callback collection
+is retained.
+
+The capture lock covers collection, conversion, and publication. A runner
+snapshot therefore waits for an in-flight callback and sees either the complete
+captured batch or no batch from that callback. Complete batches remain distinct
+in callback order, including callbacks whose output DataFrame contains zero
+rows. Query configuration and lifecycle remain separate responsibilities.
+
 ## Future extensions
 
 Kafka sources, Delta sinks, watermark-control helpers, and PyFlink support require
