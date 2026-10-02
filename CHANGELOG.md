@@ -8,6 +8,8 @@ All notable changes will be documented in this file. The format is based on
 
 ### Added
 
+- Immutable driver-side capture of Spark `foreachBatch` output, including empty
+  output batches and recursively converted nested values.
 - A deterministic Spark JSON file-stream source with explicit schemas and
   runner-owned discovery options.
 - Atomic publication of deterministic JSON Lines files for scenario batches.
