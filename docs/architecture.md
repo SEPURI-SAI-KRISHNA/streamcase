@@ -65,6 +65,33 @@ lightweight.
 The [Spark compatibility policy](spark-compatibility.md) defines the initial
 tested version line and installation extra.
 
+## Run directory layout
+
+Each runner invocation creates a unique `streamcase-run-*` root with exactly
+three initial child directories:
+
+```text
+streamcase-run-<unique>/
+  input/
+  checkpoint/
+  temporary/
+```
+
+When the caller supplies `base_dir`, that directory must already exist and must
+be a directory. Streamcase creates a new direct child beneath it, never reuses an
+existing run root, never modifies unrelated contents, and never removes the
+caller-owned base. Without `base_dir`, the unique run root is created in the
+platform temporary location.
+
+Generated paths are resolved and checked against their intended parent before
+use. Normal cleanup removes only the generated run root and is idempotent.
+Artifact retention is accepted only with an explicit caller-owned base; retained
+run roots remain available after cleanup. The layout uses `pathlib` and platform
+temporary-directory APIs rather than assuming a path separator.
+
+Batch file publication, checkpoint contents, Spark query lifecycle, and
+distributed filesystems are outside the directory layout's responsibility.
+
 ## Future extensions
 
 Kafka sources, Delta sinks, watermark-control helpers, and PyFlink support require
