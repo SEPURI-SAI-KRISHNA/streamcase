@@ -43,12 +43,24 @@ Run the local quality gates:
 ruff format --check .
 ruff check .
 mypy
-pytest
+pytest -m "not spark"
 python -m build
 python -m twine check dist/*
 ```
 
 Use `ruff format .` to apply formatting locally.
+
+Spark integration tests require a Java 17 JDK and the optional Spark dependency:
+
+```shell
+python -m pip install -e ".[dev,spark]"
+java -version
+python -c "import pyspark; print(pyspark.__version__)"
+pytest -m spark -v
+```
+
+The separate Spark CI workflow runs the same marked tests in local mode. Keep
+ordinary unit tests backend-independent so the core Python matrix remains fast.
 
 ## Pull requests
 

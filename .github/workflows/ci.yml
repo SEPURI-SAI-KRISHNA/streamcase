@@ -40,7 +40,7 @@ jobs:
         run: mypy
 
       - name: Test with coverage
-        run: pytest --cov=streamcase --cov-report=term-missing --cov-report=xml
+        run: pytest -m "not spark" --cov=streamcase --cov-report=term-missing --cov-report=xml
 
       - name: Build distributions
         run: python -m build
@@ -76,7 +76,7 @@ jobs:
         run: python -m pip install -e ".[test]"
 
       - name: Run tests
-        run: pytest
+        run: pytest -m "not spark"
 
   dependency-review:
     name: Dependency review
@@ -90,4 +90,3 @@ jobs:
 
       - name: Review dependency changes
         uses: actions/dependency-review-action@v4
-

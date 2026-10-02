@@ -16,6 +16,11 @@ All three rows apply together. A Python version passing the core suite alone doe
 not establish Spark compatibility; the dedicated integration lane is the source
 of truth for the complete combination.
 
+The path-filtered Spark workflow runs on runner, packaging, compatibility-policy,
+and Spark-test changes. It reports the Python, Java, and PySpark versions before
+starting local-mode integration tests. The ordinary unit and Python compatibility
+jobs explicitly exclude tests marked `spark` and do not install PySpark.
+
 Apache Spark 4.2 supports Python 3.10 or newer and Java 17, 21, and 25. Streamcase
 starts with the smaller matrix above so every advertised combination can be
 verified in CI. Java 21 and 25, other Spark 4.x minors, and Spark 3.x may work but

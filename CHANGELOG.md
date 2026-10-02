@@ -8,6 +8,7 @@ All notable changes will be documented in this file. The format is based on
 
 ### Added
 
+- Dedicated Java 17 and PySpark 4.2 integration-test CI lane.
 - Optional `spark` extra for the supported PySpark 4.2 line and its compatibility
   policy.
 - Immutable `Batch` scenario action and `batch()` convenience constructor.
