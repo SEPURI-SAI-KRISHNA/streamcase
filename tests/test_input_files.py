@@ -55,18 +55,20 @@ def test_final_path_appears_only_after_complete_content_is_written(
     writer = AtomicBatchWriter(run_directories)
     expected = b'{"id":1}\n{"id":2}\n'
     observed_rename = False
-    original_rename = os.rename
+    original_rename = Path.rename
 
-    def inspect_then_rename(source: os.PathLike[str], destination: os.PathLike[str]) -> None:
+    def inspect_then_rename(
+        source: Path,
+        destination: str | os.PathLike[str],
+    ) -> Path:
         nonlocal observed_rename
-        source_path = Path(source)
         destination_path = Path(destination)
-        assert source_path.read_bytes() == expected
+        assert source.read_bytes() == expected
         assert not destination_path.exists()
         observed_rename = True
-        original_rename(source, destination)
+        return original_rename(source, destination)
 
-    monkeypatch.setattr(os, "rename", inspect_then_rename)
+    monkeypatch.setattr(Path, "rename", inspect_then_rename)
 
     published = writer.publish(batch({"id": 1}, {"id": 2}))
 
@@ -166,18 +168,21 @@ def test_publish_failure_removes_temporary_file_and_does_not_advance_index(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     writer = AtomicBatchWriter(run_directories)
-    original_rename = os.rename
+    original_rename = Path.rename
 
-    def fail_rename(source: os.PathLike[str], destination: os.PathLike[str]) -> None:
+    def fail_rename(
+        source: Path,
+        destination: str | os.PathLike[str],
+    ) -> Path:
         raise OSError(f"injected rename failure: {source} -> {destination}")
 
-    monkeypatch.setattr(os, "rename", fail_rename)
+    monkeypatch.setattr(Path, "rename", fail_rename)
     with pytest.raises(OSError, match="injected rename failure"):
         writer.publish(batch({"id": 1}))
 
     assert list(run_directories.input_dir.iterdir()) == []
 
-    monkeypatch.setattr(os, "rename", original_rename)
+    monkeypatch.setattr(Path, "rename", original_rename)
     published = writer.publish(batch({"id": 1}))
 
     assert published.name == "batch-00000000000000000000.json"
