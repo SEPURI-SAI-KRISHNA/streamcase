@@ -76,10 +76,13 @@ python -m pip install -e ".[dev]"
 ruff format --check .
 ruff check .
 mypy
-pytest
+pytest -m "not spark"
 python -m build
 python -m twine check dist/*
 ```
+
+Spark contributors can run the isolated integration suite with the setup in the
+[contribution guide](CONTRIBUTING.md#development-setup).
 
 ## Contributing
 
