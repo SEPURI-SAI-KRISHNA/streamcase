@@ -148,6 +148,14 @@ and driver capture callback. It validates that every scenario action is a
 publishes one input file and calls Spark's `processAllAvailable()` before
 proceeding. There are no time-based sleeps between actions.
 
+The executor defaults to append output mode and accepts the approved complete
+and update modes. Optional query-writer settings are copied and checked before
+run directories are created. Option names are case-insensitive for collision
+checks; checkpoint location, query name, sink/callback, trigger, output mode,
+and other writer-owned controls cannot be overridden. Approved options are
+applied before the runner sets its own callback, output mode, checkpoint, and
+query name. The caller's mapping is not mutated.
+
 After the final synchronization and query stop succeed, the executor snapshots
 the capture state into `ScenarioResult`. The returned object contains only the
 approved immutable batch identifiers and rows, works with the existing Phase 2

@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, cast
 
 from streamcase._cleanup import _cleanup_on_exit
 from streamcase._directories import RunDirectories
 from streamcase._input_files import AtomicBatchWriter
 from streamcase._spark_capture import _BatchCapture
+from streamcase._spark_query_options import _prepare_query_configuration
 from streamcase.actions import Batch
 from streamcase.results import ScenarioResult
 from streamcase.scenario import Scenario
@@ -51,13 +53,20 @@ def _execute_batches(
     scenario: Scenario,
     directories: RunDirectories,
     capture: _BatchCapture,
+    *,
+    output_mode: str = "append",
+    query_options: Mapping[str, str] | None = None,
 ) -> ScenarioResult:
     """Process each input batch and return an immutable output snapshot."""
     _require_batch_only(scenario)
+    approved_mode, approved_options = _prepare_query_configuration(output_mode, query_options)
 
+    writer = stream.writeStream
+    for name, value in approved_options.items():
+        writer = writer.option(name, value)
     writer = (
-        stream.writeStream.foreachBatch(capture.callback)
-        .outputMode("append")
+        writer.foreachBatch(capture.callback)
+        .outputMode(approved_mode)
         .option("checkpointLocation", str(directories.checkpoint_dir))
         .queryName(directories.root.name)
     )

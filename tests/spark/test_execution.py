@@ -20,7 +20,11 @@ from streamcase._spark_source import _build_json_stream
 pytestmark = pytest.mark.spark
 
 
-def test_batch_actions_produce_distinct_spark_micro_batches(tmp_path: Path) -> None:
+@pytest.mark.parametrize("output_mode", ["append", "update"])
+def test_batch_actions_produce_distinct_spark_micro_batches(
+    tmp_path: Path,
+    output_mode: str,
+) -> None:
     pytest.importorskip("pyspark")
     from pyspark.sql import SparkSession
 
@@ -42,6 +46,7 @@ def test_batch_actions_produce_distinct_spark_micro_batches(tmp_path: Path) -> N
             scenario(batch({"id": 1}), batch({"id": 2})),
             directories,
             capture,
+            output_mode=output_mode,
         )
 
         assert isinstance(result, ScenarioResult)
@@ -56,6 +61,37 @@ def test_batch_actions_produce_distinct_spark_micro_batches(tmp_path: Path) -> N
             "batch-00000000000000000000.json",
             "batch-00000000000000000001.json",
         ]
+    finally:
+        directories.cleanup()
+        spark.stop()
+
+
+def test_complete_mode_captures_each_aggregate_snapshot(tmp_path: Path) -> None:
+    pytest.importorskip("pyspark")
+    from pyspark.sql import SparkSession
+
+    spark = (
+        SparkSession.builder.master("local[2]")
+        .appName("streamcase-complete-mode-integration-test")
+        .config("spark.sql.shuffle.partitions", "2")
+        .config("spark.ui.enabled", "false")
+        .config("spark.ui.showConsoleProgress", "false")
+        .getOrCreate()
+    )
+    directories = create_run_directories(base_dir=tmp_path)
+
+    try:
+        stream = _build_json_stream(spark, directories, schema="id LONG").groupBy().count()
+        result = _execute_batches(
+            stream,
+            scenario(batch({"id": 1}), batch({"id": 2})),
+            directories,
+            _BatchCapture(),
+            output_mode="complete",
+        )
+
+        assert_batch_count(result, 2)
+        assert [captured.rows[0]["count"] for captured in result.batches] == [1, 2]
     finally:
         directories.cleanup()
         spark.stop()
