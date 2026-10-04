@@ -8,6 +8,8 @@ All notable changes will be documented in this file. The format is based on
 
 ### Added
 
+- Ordered `Batch` execution with one published input file and a Spark
+  `processAllAvailable()` barrier per action.
 - Immutable driver-side capture of Spark `foreachBatch` output, including empty
   output batches and recursively converted nested values.
 - A deterministic Spark JSON file-stream source with explicit schemas and
