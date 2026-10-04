@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from collections.abc import Iterator
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
@@ -46,6 +47,8 @@ class _FakeQuery:
         self.terminate_during_processing = False
         self.isActive = True
         self.stop_calls = 0
+        self.stop_error: Exception | None = None
+        self.name: str | None = None
         self.callback: Any = None
         self.drop_output = False
 
@@ -72,6 +75,8 @@ class _FakeQuery:
     def stop(self) -> None:
         self.stop_calls += 1
         self.isActive = False
+        if self.stop_error is not None:
+            raise self.stop_error
 
 
 class _FakeStreamWriter:
@@ -99,6 +104,7 @@ class _FakeStreamWriter:
 
     def queryName(self, name: str) -> _FakeStreamWriter:  # noqa: N802
         self.query_name = name
+        self.query.name = name
         return self
 
     def start(self) -> _FakeQuery:
@@ -112,6 +118,7 @@ class _FakeStream:
     def __init__(self, query: _FakeQuery) -> None:
         self.writer = _FakeStreamWriter(query)
         self.writer_accesses = 0
+        self.sparkSession = SimpleNamespace(streams=SimpleNamespace(active=[]))
 
     @property
     def writeStream(self) -> _FakeStreamWriter:  # noqa: N802 - mirrors the PySpark API
@@ -183,6 +190,32 @@ def test_empty_output_callback_remains_a_distinct_result_batch(
     assert query.stop_calls == 1
 
 
+def test_result_snapshot_is_taken_after_query_shutdown(
+    run_directories: RunDirectories,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    query = _FakeQuery(run_directories)
+    stream = _FakeStream(query)
+    capture = _BatchCapture()
+    original_snapshot = _BatchCapture.snapshot
+
+    def snapshot_after_stop(self: _BatchCapture) -> tuple[Any, ...]:
+        assert query.stop_calls == 1
+        assert not query.isActive
+        return original_snapshot(self)
+
+    monkeypatch.setattr(_BatchCapture, "snapshot", snapshot_after_stop)
+
+    result = _execute_batches(
+        cast(Any, stream),
+        scenario(batch({"id": 1})),
+        run_directories,
+        capture,
+    )
+
+    assert_batch_count(result, 1)
+
+
 def test_restart_is_rejected_before_query_start_or_publication(
     run_directories: RunDirectories,
 ) -> None:
@@ -219,6 +252,51 @@ def test_query_start_failure_identifies_first_action(
     assert isinstance(error_info.value.__cause__, OSError)
     assert query.stop_calls == 0
     assert list(run_directories.input_dir.iterdir()) == []
+
+
+def test_start_failure_stops_only_the_query_owned_by_this_run(
+    run_directories: RunDirectories,
+) -> None:
+    own_query = _FakeQuery(run_directories)
+    caller_query = _FakeQuery(run_directories)
+    caller_query.name = "caller-owned-query"
+    stream = _FakeStream(own_query)
+    stream.sparkSession.streams.active = [caller_query, own_query]
+    stream.writer.start_error = OSError("injected failure after query registration")
+
+    with pytest.raises(RuntimeError, match="before Batch action at index 0") as error_info:
+        _execute_batches(
+            cast(Any, stream),
+            scenario(batch({"id": 1})),
+            run_directories,
+            _BatchCapture(),
+        )
+
+    assert isinstance(error_info.value.__cause__, OSError)
+    assert own_query.stop_calls == 1
+    assert caller_query.stop_calls == 0
+
+
+def test_processing_and_query_stop_failures_keep_both_errors(
+    run_directories: RunDirectories,
+) -> None:
+    query = _FakeQuery(run_directories)
+    stream = _FakeStream(query)
+    query.process_error = OSError("injected processing failure")
+    query.stop_error = OSError("injected stop failure")
+
+    with pytest.raises(RuntimeError, match="Batch action at index 0 failed") as error_info:
+        _execute_batches(
+            cast(Any, stream),
+            scenario(batch({"id": 1})),
+            run_directories,
+            _BatchCapture(),
+        )
+
+    assert error_info.value.__cause__ is query.process_error
+    assert error_info.value.__dict__["_streamcase_cleanup_failures"] == (
+        ("streaming query", query.stop_error),
+    )
 
 
 def test_publication_failure_preserves_action_index_and_cause(
