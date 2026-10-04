@@ -143,11 +143,12 @@ rows. Query configuration and lifecycle remain separate responsibilities.
 
 ## Batch execution
 
-The private batch executor starts one streaming query with the run's checkpoint
-and driver capture callback. It validates that every scenario action is a
-`Batch` before starting the query. For each action in order, it atomically
-publishes one input file and calls Spark's `processAllAvailable()` before
-proceeding. There are no time-based sleeps between actions.
+The private batch executor uses one lifecycle controller to start a streaming
+query with the run's checkpoint and driver capture callback. It validates that
+every scenario action is a `Batch` before starting the query. For each action
+in order, it atomically publishes one input file and calls Spark's
+`processAllAvailable()` before proceeding. There are no time-based sleeps
+between actions.
 
 The executor defaults to append output mode and accepts the approved complete
 and update modes. Optional query-writer settings are copied and checked before
@@ -176,6 +177,22 @@ failures are attached to it and included in the traceback on supported Python
 versions; a Python 3.10 fallback includes their context in the original error
 message. A cleanup failure after otherwise successful work is surfaced.
 `Restart` execution remains follow-up work.
+
+## Query lifecycle transitions
+
+One private controller owns at most one streaming query. Starting while it still
+owns a query is rejected, even if that query has become inactive. Callers must
+stop the owned query before starting another. Reading the active query before a
+start, after a stop, or after unexpected termination raises a clear error.
+
+Stopping before the first start or repeatedly after a successful stop is a
+no-op. If Spark's stop operation fails, the controller retains its query handle
+so a later cleanup attempt can retry; it does not silently start a replacement.
+Each successful start applies the same approved output mode, writer options,
+checkpoint location, query name, and capture callback. A start failure attempts
+to stop only this run's named query if Spark registered it before raising.
+The controller never stops the caller-owned session or unrelated queries.
+Execution of `Restart` actions remains a separate Phase 4 change.
 
 ## Future extensions
 
