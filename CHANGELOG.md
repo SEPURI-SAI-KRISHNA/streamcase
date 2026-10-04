@@ -8,6 +8,8 @@ All notable changes will be documented in this file. The format is based on
 
 ### Added
 
+- Managed cleanup for runner-owned Spark queries and run directories, preserving
+  execution failures when cleanup also fails.
 - Immutable `ScenarioResult` assembly after successful Spark batch execution,
   ready for the existing result assertions.
 - Ordered `Batch` execution with one published input file and a Spark

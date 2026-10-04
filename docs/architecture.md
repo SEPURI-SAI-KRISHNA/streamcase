@@ -156,8 +156,17 @@ An output callback with zero rows remains a distinct captured batch.
 
 If publication, processing, or query activity fails, the raised error names
 the zero-based action index and retains the original failure as its cause. The
-executor stops its query after success or failure. Runner-wide resource cleanup
-and `Restart` execution remain follow-up work.
+executor stops its query after success or failure. A private managed-run
+boundary removes its generated directory after query shutdown, including when
+stream construction, execution, or a callback fails. Retention keeps that run
+root only when the caller supplied a base directory. Neither layer stops the
+caller-owned Spark session or touches unrelated queries.
+
+If work and cleanup both fail, the original exception remains primary. Cleanup
+failures are attached to it and included in the traceback on supported Python
+versions; a Python 3.10 fallback includes their context in the original error
+message. A cleanup failure after otherwise successful work is surfaced.
+`Restart` execution remains follow-up work.
 
 ## Future extensions
 

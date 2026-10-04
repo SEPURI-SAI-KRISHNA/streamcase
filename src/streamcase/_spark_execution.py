@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
+from streamcase._cleanup import _cleanup_on_exit
 from streamcase._directories import RunDirectories
 from streamcase._input_files import AtomicBatchWriter
 from streamcase._spark_capture import _BatchCapture
@@ -33,6 +34,18 @@ def _process_batch_action(
         raise RuntimeError(f"Batch action at index {index} failed: {error}") from error
 
 
+def _require_batch_only(scenario: Scenario) -> None:
+    for index, action in enumerate(scenario.actions):
+        if not isinstance(action, Batch):
+            raise ValueError(f"Scenario action at index {index} is not a Batch.")
+
+
+def _stop_named_query(stream: DataFrame, name: str) -> None:
+    for active_query in stream.sparkSession.streams.active:
+        if active_query.name == name:
+            active_query.stop()
+
+
 def _execute_batches(
     stream: DataFrame,
     scenario: Scenario,
@@ -40,9 +53,7 @@ def _execute_batches(
     capture: _BatchCapture,
 ) -> ScenarioResult:
     """Process each input batch and return an immutable output snapshot."""
-    for index, action in enumerate(scenario.actions):
-        if not isinstance(action, Batch):
-            raise ValueError(f"Scenario action at index {index} is not a Batch.")
+    _require_batch_only(scenario)
 
     writer = (
         stream.writeStream.foreachBatch(capture.callback)
@@ -53,13 +64,15 @@ def _execute_batches(
     try:
         query = writer.start()
     except Exception as error:
-        raise RuntimeError("Could not start the query before Batch action at index 0.") from error
+        with _cleanup_on_exit(
+            "streaming query", lambda: _stop_named_query(stream, directories.root.name)
+        ):
+            raise RuntimeError(
+                "Could not start the query before Batch action at index 0."
+            ) from error
 
-    input_writer = AtomicBatchWriter(directories)
-    try:
+    with _cleanup_on_exit("streaming query", query.stop):
+        input_writer = AtomicBatchWriter(directories)
         for index, action in enumerate(scenario.actions):
             _process_batch_action(index, cast(Batch, action), input_writer, query)
-    finally:
-        query.stop()
-
     return ScenarioResult(capture.snapshot())
