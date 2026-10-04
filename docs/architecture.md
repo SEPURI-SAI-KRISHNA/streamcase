@@ -148,6 +148,12 @@ and driver capture callback. It validates that every scenario action is a
 publishes one input file and calls Spark's `processAllAvailable()` before
 proceeding. There are no time-based sleeps between actions.
 
+After the final synchronization and query stop succeed, the executor snapshots
+the capture state into `ScenarioResult`. The returned object contains only the
+approved immutable batch identifiers and rows, works with the existing Phase 2
+assertions, and cannot change when later callbacks append to the capture object.
+An output callback with zero rows remains a distinct captured batch.
+
 If publication, processing, or query activity fails, the raised error names
 the zero-based action index and retains the original failure as its cause. The
 executor stops its query after success or failure. Runner-wide resource cleanup

@@ -4,7 +4,14 @@ from pathlib import Path
 
 import pytest
 
-from streamcase import batch, scenario
+from streamcase import (
+    ScenarioResult,
+    assert_batch_count,
+    assert_rows_equal,
+    assert_unique_keys,
+    batch,
+    scenario,
+)
 from streamcase._directories import create_run_directories
 from streamcase._spark_capture import _BatchCapture
 from streamcase._spark_execution import _execute_batches
@@ -30,16 +37,21 @@ def test_batch_actions_produce_distinct_spark_micro_batches(tmp_path: Path) -> N
 
     try:
         stream = _build_json_stream(spark, directories, schema="id LONG")
-        _execute_batches(
+        result = _execute_batches(
             stream,
             scenario(batch({"id": 1}), batch({"id": 2})),
             directories,
             capture,
         )
 
-        captured = capture.snapshot()
-        assert [item.batch_id for item in captured] == [0, 1]
-        assert [item.rows for item in captured] == [({"id": 1},), ({"id": 2},)]
+        assert isinstance(result, ScenarioResult)
+        assert [item.batch_id for item in result.batches] == [0, 1]
+        assert_batch_count(result, 2)
+        assert_rows_equal(result, [{"id": 1}, {"id": 2}])
+        assert_unique_keys(result, "id")
+        assert all(
+            type(value).__module__ == "builtins" for row in result.rows for value in row.values()
+        )
         assert sorted(path.name for path in directories.input_dir.iterdir()) == [
             "batch-00000000000000000000.json",
             "batch-00000000000000000001.json",
