@@ -4,10 +4,9 @@
 
 Streamcase aims to make small streaming tests deterministic, readable, isolated,
 and diagnosable. The backend-independent
-[scenario model](scenario-model.md) is implemented; the runner and result layers
-are being delivered separately. The result layer is implemented and the runner
-below remains proposed. Streamcase will not emulate Spark. Tests will execute
-through Spark's public Structured Streaming interfaces.
+[scenario model](scenario-model.md), result layer, and batch-only Spark runner
+are implemented. Restart execution remains planned. Streamcase does not emulate
+Spark; tests run through Spark's public Structured Streaming interfaces.
 
 ## Execution model
 
@@ -24,20 +23,22 @@ checkpoint <--- stop/start action           foreachBatch capture
                                       rows + result assertions
 ```
 
-The planned `run_scenario()` call will create an isolated directory containing
-its input and checkpoint data. `maxFilesPerTrigger=1` will preserve logical batch
-boundaries. After writing a file atomically, Streamcase will call
+The batch-only `run_scenario()` call creates an isolated directory containing
+its input and checkpoint data. `maxFilesPerTrigger=1` preserves logical batch
+boundaries. After writing a file atomically, Streamcase calls
 `processAllAvailable()`, which Spark documents as a testing-oriented
 synchronization method.
 
 A planned `Restart` action will stop the active query and recreate the source,
-transformation, and query with the same checkpoint. The proposed runner will
-record rows in the Python driver through `foreachBatch` and normalize them into
-the backend-independent result objects.
+transformation, and query with the same checkpoint. The batch-only runner
+records rows in the Python driver through `foreachBatch` and normalizes them
+into backend-independent result objects.
 
 The accepted [Spark runner API and ownership decision](design/0002-spark-runner-api.md)
 defines a caller-owned `SparkSession`, the optional `streamcase.spark`
 namespace, deterministic source/query configuration, and runner-owned cleanup.
+The implemented [public Spark runner contract](spark-runner.md) covers the
+batch-only phase.
 
 ## Boundaries
 

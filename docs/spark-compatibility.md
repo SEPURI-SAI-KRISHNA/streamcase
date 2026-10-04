@@ -32,14 +32,14 @@ The upstream requirements are documented in the
 
 ## Installation
 
-The default installation contains no PySpark dependency:
+After the first PyPI release, the default installation will contain no PySpark
+dependency:
 
 ```shell
 python -m pip install streamcase
 ```
 
-Install Streamcase with its Spark integration dependency using the `spark`
-extra:
+The published `spark` extra will install the Spark integration dependency:
 
 ```shell
 python -m pip install "streamcase[spark]"
@@ -62,7 +62,7 @@ Install a Java 17 JDK separately and make it available through `JAVA_HOME` or
 - Only the `spark` extra installs PySpark.
 - Importing `streamcase` and its backend-independent APIs does not import
   PySpark or initialize a JVM.
-- Importing the future `streamcase.spark` namespace will require the extra and
+- Importing the `streamcase.spark` namespace requires the extra and
   produce an actionable installation error when it is absent.
 - The installed PySpark minor version should match a remote Spark cluster's
   minor version. Streamcase's initial runner and CI use local mode.

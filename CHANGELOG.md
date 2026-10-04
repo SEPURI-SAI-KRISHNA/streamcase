@@ -8,6 +8,8 @@ All notable changes will be documented in this file. The format is based on
 
 ### Added
 
+- Public batch-only `streamcase.spark.run_scenario` API with caller-owned session,
+  transformation validation, and optional PySpark installation guidance.
 - Validated Spark query output modes and non-conflicting writer options for the
   private batch runner.
 - Managed cleanup for runner-owned Spark queries and run directories, preserving
