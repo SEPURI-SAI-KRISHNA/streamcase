@@ -8,6 +8,8 @@ All notable changes will be documented in this file. The format is based on
 
 ### Added
 
+- A private Spark query lifecycle controller with idempotent stop and
+  restart-safe writer configuration.
 - A two-batch public Spark runner quick start and matching integration test.
 - Public batch-only `streamcase.spark.run_scenario` API with caller-owned session,
   transformation validation, and optional PySpark installation guidance.
