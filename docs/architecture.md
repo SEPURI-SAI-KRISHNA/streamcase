@@ -140,6 +140,19 @@ captured batch or no batch from that callback. Complete batches remain distinct
 in callback order, including callbacks whose output DataFrame contains zero
 rows. Query configuration and lifecycle remain separate responsibilities.
 
+## Batch execution
+
+The private batch executor starts one streaming query with the run's checkpoint
+and driver capture callback. It validates that every scenario action is a
+`Batch` before starting the query. For each action in order, it atomically
+publishes one input file and calls Spark's `processAllAvailable()` before
+proceeding. There are no time-based sleeps between actions.
+
+If publication, processing, or query activity fails, the raised error names
+the zero-based action index and retains the original failure as its cause. The
+executor stops its query after success or failure. Runner-wide resource cleanup
+and `Restart` execution remain follow-up work.
+
 ## Future extensions
 
 Kafka sources, Delta sinks, watermark-control helpers, and PyFlink support require
