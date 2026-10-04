@@ -145,3 +145,31 @@ def test_restart_fails_before_directory_creation(tmp_path: Path) -> None:
         )
 
     assert list(tmp_path.glob("streamcase-run-*")) == []
+
+
+@pytest.mark.parametrize(
+    ("output_mode", "query_options", "message"),
+    [
+        ("overwrite", None, "output mode must be"),
+        ("append", {"QUERYNAME": "caller-name"}, "Runner-owned query options"),
+    ],
+)
+def test_invalid_query_configuration_fails_before_directory_or_stream_creation(
+    tmp_path: Path,
+    output_mode: str,
+    query_options: dict[str, str] | None,
+    message: str,
+) -> None:
+    def unexpected_build(_directories: RunDirectories) -> Any:
+        pytest.fail("stream builder was called")
+
+    with pytest.raises(ValueError, match=message):
+        _run_managed_batches(
+            scenario(batch({"id": 1})),
+            unexpected_build,
+            base_dir=tmp_path,
+            output_mode=output_mode,
+            query_options=query_options,
+        )
+
+    assert list(tmp_path.glob("streamcase-run-*")) == []

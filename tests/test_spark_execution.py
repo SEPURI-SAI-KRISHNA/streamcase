@@ -170,6 +170,51 @@ def test_each_batch_is_published_then_processed_in_scenario_order(
     assert_rows_equal(result, [{"id": 1}, {"id": 2}])
 
 
+@pytest.mark.parametrize("mode", ["complete", "update"])
+def test_approved_output_mode_and_query_options_reach_the_writer(
+    run_directories: RunDirectories,
+    mode: str,
+) -> None:
+    query = _FakeQuery(run_directories)
+    stream = _FakeStream(query)
+    caller_options = {"customOption": "enabled"}
+
+    _execute_batches(
+        cast(Any, stream),
+        scenario(batch({"id": 1})),
+        run_directories,
+        _BatchCapture(),
+        output_mode=mode,
+        query_options=caller_options,
+    )
+
+    assert stream.writer.output_mode == mode
+    assert stream.writer.options == {
+        "customOption": "enabled",
+        "checkpointLocation": str(run_directories.checkpoint_dir),
+    }
+    assert stream.writer.query_name == run_directories.root.name
+    assert caller_options == {"customOption": "enabled"}
+    assert query.stop_calls == 1
+
+
+def test_invalid_query_configuration_does_not_access_the_writer(
+    run_directories: RunDirectories,
+) -> None:
+    stream = _FakeStream(_FakeQuery(run_directories))
+
+    with pytest.raises(ValueError, match="Runner-owned query options"):
+        _execute_batches(
+            cast(Any, stream),
+            scenario(batch({"id": 1})),
+            run_directories,
+            _BatchCapture(),
+            query_options={"CHECKPOINTLOCATION": "caller-path"},
+        )
+
+    assert stream.writer_accesses == 0
+
+
 def test_empty_output_callback_remains_a_distinct_result_batch(
     run_directories: RunDirectories,
 ) -> None:

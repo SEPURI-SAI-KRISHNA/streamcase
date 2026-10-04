@@ -8,6 +8,8 @@ All notable changes will be documented in this file. The format is based on
 
 ### Added
 
+- Validated Spark query output modes and non-conflicting writer options for the
+  private batch runner.
 - Managed cleanup for runner-owned Spark queries and run directories, preserving
   execution failures when cleanup also fails.
 - Immutable `ScenarioResult` assembly after successful Spark batch execution,
