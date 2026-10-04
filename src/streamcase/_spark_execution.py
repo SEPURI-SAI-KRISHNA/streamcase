@@ -8,6 +8,7 @@ from streamcase._directories import RunDirectories
 from streamcase._input_files import AtomicBatchWriter
 from streamcase._spark_capture import _BatchCapture
 from streamcase.actions import Batch
+from streamcase.results import ScenarioResult
 from streamcase.scenario import Scenario
 
 if TYPE_CHECKING:
@@ -37,8 +38,8 @@ def _execute_batches(
     scenario: Scenario,
     directories: RunDirectories,
     capture: _BatchCapture,
-) -> None:
-    """Publish and process each input batch before advancing to the next one."""
+) -> ScenarioResult:
+    """Process each input batch and return an immutable output snapshot."""
     for index, action in enumerate(scenario.actions):
         if not isinstance(action, Batch):
             raise ValueError(f"Scenario action at index {index} is not a Batch.")
@@ -60,3 +61,5 @@ def _execute_batches(
             _process_batch_action(index, cast(Batch, action), input_writer, query)
     finally:
         query.stop()
+
+    return ScenarioResult(capture.snapshot())

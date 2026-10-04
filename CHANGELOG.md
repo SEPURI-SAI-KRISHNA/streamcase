@@ -8,6 +8,8 @@ All notable changes will be documented in this file. The format is based on
 
 ### Added
 
+- Immutable `ScenarioResult` assembly after successful Spark batch execution,
+  ready for the existing result assertions.
 - Ordered `Batch` execution with one published input file and a Spark
   `processAllAvailable()` barrier per action.
 - Immutable driver-side capture of Spark `foreachBatch` output, including empty

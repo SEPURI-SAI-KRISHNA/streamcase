@@ -1,15 +1,41 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, cast
 
 import pytest
 
-from streamcase import batch, restart, scenario
+from streamcase import (
+    ScenarioResult,
+    assert_batch_count,
+    assert_rows_equal,
+    assert_unique_keys,
+    batch,
+    restart,
+    scenario,
+)
 from streamcase._directories import RunDirectories, create_run_directories
 from streamcase._spark_capture import _BatchCapture
 from streamcase._spark_execution import _execute_batches
+
+
+class _FakeRow:
+    def __init__(self, values: dict[str, object]) -> None:
+        self.values = values
+
+    def asDict(self, recursive: bool = False) -> dict[str, object]:  # noqa: N802
+        assert recursive
+        return dict(self.values)
+
+
+class _FakeDataFrame:
+    def __init__(self, rows: list[_FakeRow]) -> None:
+        self.rows = rows
+
+    def collect(self) -> list[_FakeRow]:
+        return self.rows
 
 
 class _FakeQuery:
@@ -20,6 +46,8 @@ class _FakeQuery:
         self.terminate_during_processing = False
         self.isActive = True
         self.stop_calls = 0
+        self.callback: Any = None
+        self.drop_output = False
 
     def processAllAvailable(self) -> None:  # noqa: N802 - mirrors the PySpark API
         if self.process_error is not None:
@@ -28,6 +56,16 @@ class _FakeQuery:
         assert len(visible) == len(self.processed) + 1
         current = visible[-1]
         self.processed.append((current.name, current.read_text(encoding="utf-8")))
+        if self.callback is not None:
+            rows = (
+                []
+                if self.drop_output
+                else [
+                    _FakeRow(json.loads(line))
+                    for line in current.read_text(encoding="utf-8").splitlines()
+                ]
+            )
+            self.callback(cast(Any, _FakeDataFrame(rows)), len(self.processed) - 1)
         if self.terminate_during_processing:
             self.isActive = False
 
@@ -48,6 +86,7 @@ class _FakeStreamWriter:
 
     def foreachBatch(self, callback: object) -> _FakeStreamWriter:  # noqa: N802
         self.callback = callback
+        self.query.callback = callback
         return self
 
     def outputMode(self, mode: str) -> _FakeStreamWriter:  # noqa: N802
@@ -96,7 +135,7 @@ def test_each_batch_is_published_then_processed_in_scenario_order(
     stream = _FakeStream(query)
     capture = _BatchCapture()
 
-    _execute_batches(
+    result = _execute_batches(
         cast(Any, stream),
         scenario(batch({"id": 1}), batch({"id": 2})),
         run_directories,
@@ -113,6 +152,34 @@ def test_each_batch_is_published_then_processed_in_scenario_order(
     assert stream.writer.options == {"checkpointLocation": str(run_directories.checkpoint_dir)}
     assert stream.writer.query_name == run_directories.root.name
     assert stream.writer.start_calls == 1
+    assert query.stop_calls == 1
+    assert isinstance(result, ScenarioResult)
+    assert_batch_count(result, 2)
+    assert_rows_equal(result, [{"id": 1}, {"id": 2}])
+    assert_unique_keys(result, "id")
+
+    capture.callback(cast(Any, _FakeDataFrame([_FakeRow({"id": 3})])), 2)
+    assert_batch_count(result, 2)
+    assert_rows_equal(result, [{"id": 1}, {"id": 2}])
+
+
+def test_empty_output_callback_remains_a_distinct_result_batch(
+    run_directories: RunDirectories,
+) -> None:
+    query = _FakeQuery(run_directories)
+    query.drop_output = True
+    stream = _FakeStream(query)
+
+    result = _execute_batches(
+        cast(Any, stream),
+        scenario(batch({"id": 1})),
+        run_directories,
+        _BatchCapture(),
+    )
+
+    assert_batch_count(result, 1)
+    assert result.batches[0].batch_id == 0
+    assert_rows_equal(result, [])
     assert query.stop_calls == 1
 
 
