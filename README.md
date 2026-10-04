@@ -3,12 +3,11 @@
 [![CI](https://github.com/SEPURI-SAI-KRISHNA/streamcase/actions/workflows/ci.yml/badge.svg)](https://github.com/SEPURI-SAI-KRISHNA/streamcase/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-Streamcase is a planned pytest-oriented toolkit for deterministic Apache Spark
+Streamcase is an early-development pytest-oriented toolkit for deterministic Apache Spark
 Structured Streaming tests.
 
-> **Status:** early development. The backend-independent scenario model is
-> implemented together with immutable result models and assertions, but Spark
-> execution and a published release are not available yet.
+> **Status:** the batch-only Spark runner, scenario model, results, and assertions
+> are implemented. Restart execution and a published release are not available yet.
 
 ## Problem
 
@@ -19,20 +18,20 @@ tests while executing against Spark's public Structured Streaming interfaces.
 
 ## Installation
 
-Install the lightweight backend-independent package with:
+Until the first PyPI release, install the lightweight backend-independent
+package from this checkout with:
 
 ```shell
-python -m pip install streamcase
+python -m pip install -e .
 ```
 
-Install the approved PySpark line for the planned Spark runner with:
+Install the approved PySpark line for the Spark runner from this checkout with:
 
 ```shell
-python -m pip install "streamcase[spark]"
+python -m pip install -e ".[spark]"
 ```
 
-The runner is not implemented yet. The extra establishes its reproducible
-dependency path without making PySpark a core dependency. See the
+The Spark extra keeps PySpark out of the core dependency set. See the
 [Spark compatibility policy](docs/spark-compatibility.md) for the supported
 Python, Java, and Spark combination.
 
@@ -40,13 +39,14 @@ Python, Java, and Spark combination.
 
 Streamcase can describe immutable logical input batches and checkpoint-preserving
 restart boundaries, represent captured output, and assert row equality, batch
-counts, and unique keys without importing PySpark. See the
+counts, and unique keys without importing PySpark. The public batch-only Spark
+runner executes scenarios against a caller-owned session. See the
 [scenario model guide](docs/scenario-model.md) and
-[results and assertions guide](docs/results-and-assertions.md).
+[results and assertions guide](docs/results-and-assertions.md), plus the
+[Spark runner contract](docs/spark-runner.md).
 
 ## Planned capabilities
 
-- deterministic file-backed micro-batch execution;
 - explicit stop and restart using the same checkpoint;
 - progress, watermark, and state-store assertions;
 - pytest fixtures;
