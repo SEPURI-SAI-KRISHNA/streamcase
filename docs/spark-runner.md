@@ -6,16 +6,48 @@ and provide a Java 17 runtime before using it; see the
 package does not require PySpark. Importing `streamcase.spark` without the extra
 raises an installation hint.
 
+## Quick start
+
+From a checkout, use Python 3.10-3.13, a Java 17 JDK on `PATH` or in
+`JAVA_HOME`, and the supported PySpark 4.2 line. Install the optional dependency
+with `python -m pip install -e ".[spark]"`. The example runs in Spark local
+mode; no cluster or timing sleeps are needed.
+
 ```python
+from pyspark.sql import DataFrame, SparkSession
+
+from streamcase import assert_batch_count, assert_rows_equal, batch, scenario
 from streamcase.spark import run_scenario
 
-result = run_scenario(
-    spark,
-    test_scenario,
-    schema="id LONG",
-    transform=build_pipeline,
-)
+
+def transform(source: DataFrame) -> DataFrame:
+    return source.filter("category = 'keep'").selectExpr("id", "id * 10 AS scaled")
+
+
+spark = SparkSession.builder.master("local[2]").appName("streamcase-quickstart").getOrCreate()
+try:
+    result = run_scenario(
+        spark,
+        scenario(
+            batch({"id": 1, "category": "keep"}, {"id": 2, "category": "drop"}),
+            batch({"id": 3, "category": "keep"}),
+        ),
+        schema="id LONG, category STRING",
+        transform=transform,
+    )
+
+    assert_batch_count(result, 2)
+    assert_rows_equal(result, [{"id": 1, "scaled": 10}, {"id": 3, "scaled": 30}])
+    assert [captured.batch_id for captured in result.batches] == [0, 1]
+finally:
+    spark.stop()
 ```
+
+Each `Batch` publishes one input file and produces one captured output batch in
+this example. Streamcase stops its query and removes its generated input and
+checkpoint files before `run_scenario` returns. The `SparkSession` remains
+caller-owned, so the `finally` block stops it explicitly. The Spark CI lane
+executes the same two-batch workflow and checks query and directory cleanup.
 
 The caller creates and eventually stops `spark`. `run_scenario` never creates or
 stops a session and does not touch unrelated streaming queries. It creates a
@@ -44,5 +76,4 @@ and preserves the generated child for inspection. The caller's base directory
 is never removed.
 
 The return value is an immutable `ScenarioResult` with no live Spark objects.
-Use the [result assertions](results-and-assertions.md) to inspect it. A full
-two-batch quick start is planned for issue #58.
+Use the [result assertions](results-and-assertions.md) to inspect it.
