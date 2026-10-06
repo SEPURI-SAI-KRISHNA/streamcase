@@ -165,6 +165,36 @@ def test_restart_rebuilds_stream_with_the_same_managed_directories(tmp_path: Pat
         stream.writeStream.option.assert_any_call("checkpointLocation", str(checkpoints[0]))
 
 
+def test_restart_rebuild_failure_cleans_managed_root_without_stopping_session(
+    tmp_path: Path,
+) -> None:
+    stream, query = _fake_stream()
+    roots: list[Path] = []
+    build_error = OSError("injected replacement stream failure")
+
+    def build_stream(directories: RunDirectories) -> Any:
+        roots.append(directories.root)
+        if len(roots) == 2:
+            raise build_error
+        return stream
+
+    with pytest.raises(
+        RuntimeError, match="Restart action at index 1 failed while rebuilding the stream"
+    ) as error_info:
+        _run_managed_batches(
+            scenario(batch({"id": 1}), restart(), batch({"id": 2})),
+            build_stream,
+            base_dir=tmp_path,
+        )
+
+    assert error_info.value.__cause__ is build_error
+    assert len(roots) == 2
+    assert roots[0] == roots[1]
+    assert not roots[0].exists()
+    query.stop.assert_called_once_with()
+    stream.sparkSession.stop.assert_not_called()
+
+
 @pytest.mark.parametrize(
     ("output_mode", "query_options", "message"),
     [

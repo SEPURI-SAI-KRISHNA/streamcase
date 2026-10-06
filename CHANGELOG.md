@@ -42,5 +42,8 @@ All notable changes will be documented in this file. The format is based on
 
 ### Changed
 
+- Restart failures identify the failed transition and retry cleanup of a
+  replacement query registered before Spark raises, preserving cleanup errors
+  alongside the original failure.
 - Package and distribution metadata now read the version from one source.
 - Release automation now rejects tags that do not match the package version.

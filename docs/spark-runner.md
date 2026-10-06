@@ -61,6 +61,8 @@ boundaries. At each restart, Streamcase stops its query, rebuilds the source
 and transformation, and starts a replacement using the same checkpoint and
 query settings. The caller's `transform` callable may therefore run more than
 once per scenario. A more detailed restart example is tracked separately.
+Failures identify the restart action and transition; Streamcase attempts query
+and directory cleanup without replacing the original exception.
 
 `schema` is a non-empty Spark DDL string or `StructType`. `transform` receives
 the streaming JSON input DataFrame and must return a streaming DataFrame from

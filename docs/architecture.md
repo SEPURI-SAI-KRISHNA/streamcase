@@ -178,7 +178,13 @@ If work and cleanup both fail, the original exception remains primary. Cleanup
 failures are attached to it and included in the traceback on supported Python
 versions; a Python 3.10 fallback includes their context in the original error
 message. A cleanup failure after otherwise successful work is surfaced.
-More exhaustive restart failure cleanup is tracked as follow-up work.
+Restart failures identify the zero-based action index and whether stopping,
+rebuilding, or starting failed. The runner always attempts to stop its current
+query and remove its generated directory while preserving the primary failure.
+If Spark registers a replacement query before `start()` raises, the lifecycle
+controller retains a name-scoped cleanup target for a second stop attempt.
+Cleanup failures are attached to the primary error rather than replacing it;
+Spark itself must still cooperate with a stop request for shutdown to succeed.
 
 ## Query lifecycle transitions
 
@@ -192,7 +198,9 @@ no-op. If Spark's stop operation fails, the controller retains its query handle
 so a later cleanup attempt can retry; it does not silently start a replacement.
 Each successful start applies the same approved output mode, writer options,
 checkpoint location, query name, and capture callback. A start failure attempts
-to stop only this run's named query if Spark registered it before raising.
+to stop only this run's named query if Spark registered it before raising. If
+that first attempt fails, the controller retains the target and the enclosing
+runner cleanup retries it before removing the run directory.
 The controller never stops the caller-owned session or unrelated queries.
 The executor uses these transitions for `Restart` actions.
 

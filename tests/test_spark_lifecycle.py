@@ -164,3 +164,39 @@ def test_failed_later_start_only_stops_the_query_named_for_this_run(
     owned_query.stop.assert_called_once_with()
     caller_query.stop.assert_not_called()
     stream.sparkSession.stop.assert_not_called()
+
+
+def test_failed_start_retains_named_query_for_cleanup_retry(
+    run_directories: RunDirectories,
+) -> None:
+    owned_query = Mock(isActive=True)
+    owned_query.name = run_directories.root.name
+    first_cleanup_error = OSError("injected first cleanup failure")
+    owned_query.stop.side_effect = [first_cleanup_error, None]
+    caller_query = Mock(isActive=True)
+    caller_query.name = "caller-query"
+    stream, writer = _fake_stream(owned_query)
+    stream.sparkSession.streams.active = [caller_query, owned_query]
+    writer.start.side_effect = OSError("injected start failure")
+    lifecycle = _QueryLifecycle(run_directories, _BatchCapture())
+
+    with pytest.raises(RuntimeError, match="before Batch action at index 2") as error_info:
+        lifecycle.start(cast(Any, stream), action_index=2)
+
+    assert error_info.value.__dict__["_streamcase_cleanup_failures"] == (
+        ("streaming query", first_cleanup_error),
+    )
+    next_stream, next_writer = _fake_stream(Mock(isActive=True))
+    with pytest.raises(RuntimeError, match="Stop the owned streaming query"):
+        lifecycle.start(cast(Any, next_stream), action_index=2)
+    next_writer.start.assert_not_called()
+
+    lifecycle.stop()
+    owned_query.stop.assert_called_with()
+    assert owned_query.stop.call_count == 2
+    caller_query.stop.assert_not_called()
+    stream.sparkSession.stop.assert_not_called()
+
+    lifecycle.start(cast(Any, next_stream), action_index=2)
+    next_writer.start.assert_called_once_with()
+    lifecycle.stop()
