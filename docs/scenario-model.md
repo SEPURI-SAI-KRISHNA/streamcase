@@ -1,8 +1,9 @@
 # Scenario model
 
 Streamcase scenarios describe logical streaming input and lifecycle boundaries
-without importing or starting Spark. This Phase 1 API is available for modeling
-only: there is not yet a public runner that executes a scenario.
+without importing or starting Spark. The public
+[`run_scenario()` runner](spark-runner.md) executes them when the optional Spark
+extra is installed.
 
 ## Quick start
 
@@ -23,8 +24,8 @@ assert len(order_lifecycle.actions) == 3
 
 The factories return the immutable public `Batch`, `Restart`, and `Scenario`
 types. The `Action` type alias represents `Batch | Restart`. These names are
-exported from `streamcase`; serialization helpers and future runner components
-remain private.
+exported from `streamcase`; serialization helpers and runner components remain
+private.
 
 ## Batch contract
 
@@ -76,7 +77,7 @@ type.
 
 ## Internal JSON Lines contract
 
-The future file-backed runner will encode each `Batch` as one JSON Lines input
+The file-backed runner encodes each `Batch` as one JSON Lines input
 file. The encoder is private because users describe data with `batch()` rather
 than serializing actions themselves.
 

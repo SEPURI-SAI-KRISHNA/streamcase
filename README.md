@@ -43,7 +43,8 @@ counts, and unique keys without importing PySpark. The public Spark runner
 executes batches and restarts against a caller-owned session. See the
 [scenario model guide](docs/scenario-model.md) and
 [results and assertions guide](docs/results-and-assertions.md), plus the
-[two-batch Spark quick start and runner contract](docs/spark-runner.md).
+[two-batch Spark quick start and runner contract](docs/spark-runner.md) and
+[checkpoint restart example](docs/restart-scenarios.md).
 
 ## Planned capabilities
 

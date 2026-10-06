@@ -38,7 +38,9 @@ The accepted [Spark runner API and ownership decision](design/0002-spark-runner-
 defines a caller-owned `SparkSession`, the optional `streamcase.spark`
 namespace, deterministic source/query configuration, and runner-owned cleanup.
 The implemented [public Spark runner contract](spark-runner.md) covers the
-current batch and restart behavior.
+current batch and restart behavior. The
+[checkpoint restart guide](restart-scenarios.md) has a runnable example and
+states the user-facing guarantees and limits.
 
 ## Boundaries
 
