@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING
 
-from streamcase._cleanup import _cleanup_on_exit
+from streamcase._cleanup import _cleanup_on_exit, _record_cleanup_failure
 from streamcase._directories import RunDirectories
 from streamcase._input_files import AtomicBatchWriter
 from streamcase._spark_capture import _BatchCapture
@@ -41,10 +41,26 @@ def _process_restart_action(
     try:
         lifecycle.require_active()
         lifecycle.stop()
-        lifecycle.start(rebuild_stream(), action_index=index + 1)
+    except Exception as error:
+        raise _restart_failure(index, "stopping the active query", error) from error
+
+    try:
+        replacement_stream = rebuild_stream()
+    except Exception as error:
+        raise _restart_failure(index, "rebuilding the stream", error) from error
+
+    try:
+        lifecycle.start(replacement_stream, action_index=index + 1)
         lifecycle.require_active()
     except Exception as error:
-        raise RuntimeError(f"Restart action at index {index} failed: {error}") from error
+        raise _restart_failure(index, "starting the replacement query", error) from error
+
+
+def _restart_failure(index: int, transition: str, error: Exception) -> RuntimeError:
+    failure = RuntimeError(f"Restart action at index {index} failed while {transition}: {error}")
+    for resource, cleanup_error in getattr(error, "_streamcase_cleanup_failures", ()):
+        _record_cleanup_failure(failure, resource, cleanup_error)
+    return failure
 
 
 def _execute_batches(
@@ -67,9 +83,8 @@ def _execute_batches(
         output_mode=output_mode,
         query_options=query_options,
     )
-    lifecycle.start(stream, action_index=0)
-
     with _cleanup_on_exit("streaming query", lifecycle.stop):
+        lifecycle.start(stream, action_index=0)
         input_writer = AtomicBatchWriter(directories)
         for index, action in enumerate(scenario.actions):
             if isinstance(action, Batch):

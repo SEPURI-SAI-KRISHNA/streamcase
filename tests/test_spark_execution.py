@@ -52,6 +52,7 @@ class _FakeQuery:
         self.isActive = True
         self.stop_calls = 0
         self.stop_error: Exception | None = None
+        self.stop_errors: list[Exception] = []
         self.name: str | None = None
         self.callback: Any = None
         self.drop_output = False
@@ -78,9 +79,11 @@ class _FakeQuery:
 
     def stop(self) -> None:
         self.stop_calls += 1
-        self.isActive = False
+        if self.stop_errors:
+            raise self.stop_errors.pop(0)
         if self.stop_error is not None:
             raise self.stop_error
+        self.isActive = False
 
 
 class _FakeStreamWriter:
@@ -340,7 +343,9 @@ def test_restart_build_failure_has_action_context_and_stops_old_query(
     def fail_rebuild() -> Any:
         raise build_error
 
-    with pytest.raises(RuntimeError, match="Restart action at index 1 failed") as error_info:
+    with pytest.raises(
+        RuntimeError, match="Restart action at index 1 failed while rebuilding the stream"
+    ) as error_info:
         _execute_batches(
             cast(Any, stream),
             scenario(batch({"id": 1}), restart(), batch({"id": 2})),
@@ -354,6 +359,38 @@ def test_restart_build_failure_has_action_context_and_stops_old_query(
     assert len(query.processed) == 1
 
 
+def test_restart_stop_failure_is_retried_without_starting_a_replacement(
+    run_directories: RunDirectories,
+) -> None:
+    query = _FakeQuery(run_directories)
+    query.stop_errors = [OSError("injected first stop failure")]
+    stream = _FakeStream(query)
+    rebuild_calls = 0
+
+    def rebuild_stream() -> Any:
+        nonlocal rebuild_calls
+        rebuild_calls += 1
+        return stream
+
+    with pytest.raises(
+        RuntimeError, match="Restart action at index 1 failed while stopping the active query"
+    ) as error_info:
+        _execute_batches(
+            cast(Any, stream),
+            scenario(batch({"id": 1}), restart(), batch({"id": 2})),
+            run_directories,
+            _BatchCapture(),
+            rebuild_stream=rebuild_stream,
+        )
+
+    assert isinstance(error_info.value.__cause__, OSError)
+    assert query.stop_calls == 2
+    assert not query.isActive
+    assert rebuild_calls == 0
+    assert stream.writer.start_calls == 1
+    assert len(query.processed) == 1
+
+
 def test_restart_query_start_failure_has_action_context(
     run_directories: RunDirectories,
 ) -> None:
@@ -364,7 +401,9 @@ def test_restart_query_start_failure_has_action_context(
     start_error = OSError("injected replacement start failure")
     replacement_stream.writer.start_error = start_error
 
-    with pytest.raises(RuntimeError, match="Restart action at index 1 failed") as error_info:
+    with pytest.raises(
+        RuntimeError, match="Restart action at index 1 failed while starting the replacement query"
+    ) as error_info:
         _execute_batches(
             cast(Any, first_stream),
             scenario(batch({"id": 1}), restart(), batch({"id": 2})),
@@ -378,6 +417,68 @@ def test_restart_query_start_failure_has_action_context(
     assert first_query.stop_calls == 1
     assert replacement_stream.writer.start_calls == 1
     assert len(first_query.processed) == 1
+
+
+def test_restart_start_cleanup_retries_only_the_run_owned_registered_query(
+    run_directories: RunDirectories,
+) -> None:
+    first_query = _FakeQuery(run_directories)
+    replacement_query = _FakeQuery(run_directories, first_query.processed)
+    cleanup_error = OSError("injected first cleanup failure")
+    replacement_query.stop_errors = [cleanup_error]
+    caller_query = _FakeQuery(run_directories)
+    caller_query.name = "caller-owned-query"
+    first_stream = _FakeStream(first_query)
+    replacement_stream = _FakeStream(replacement_query)
+    replacement_stream.sparkSession.streams.active = [caller_query, replacement_query]
+    start_error = OSError("injected replacement start failure")
+    replacement_stream.writer.start_error = start_error
+
+    with pytest.raises(
+        RuntimeError, match="Restart action at index 1 failed while starting the replacement query"
+    ) as error_info:
+        _execute_batches(
+            cast(Any, first_stream),
+            scenario(batch({"id": 1}), restart(), batch({"id": 2})),
+            run_directories,
+            _BatchCapture(),
+            rebuild_stream=lambda: cast(Any, replacement_stream),
+        )
+
+    primary = error_info.value
+    assert isinstance(primary.__cause__, RuntimeError)
+    assert primary.__cause__.__cause__ is start_error
+    assert primary.__dict__["_streamcase_cleanup_failures"] == (("streaming query", cleanup_error),)
+    assert first_query.stop_calls == 1
+    assert replacement_query.stop_calls == 2
+    assert not replacement_query.isActive
+    assert caller_query.stop_calls == 0
+
+
+def test_inactive_replacement_query_is_cleaned_up_with_restart_context(
+    run_directories: RunDirectories,
+) -> None:
+    first_query = _FakeQuery(run_directories)
+    replacement_query = _FakeQuery(run_directories, first_query.processed)
+    replacement_query.isActive = False
+    first_stream = _FakeStream(first_query)
+    replacement_stream = _FakeStream(replacement_query)
+
+    with pytest.raises(
+        RuntimeError, match="Restart action at index 1 failed while starting the replacement query"
+    ) as error_info:
+        _execute_batches(
+            cast(Any, first_stream),
+            scenario(batch({"id": 1}), restart(), batch({"id": 2})),
+            run_directories,
+            _BatchCapture(),
+            rebuild_stream=lambda: cast(Any, replacement_stream),
+        )
+
+    assert "streaming query terminated" in str(error_info.value)
+    assert first_query.stop_calls == 1
+    assert replacement_query.stop_calls == 1
+    assert not replacement_query.isActive
 
 
 def test_query_start_failure_identifies_first_action(
@@ -421,6 +522,37 @@ def test_start_failure_stops_only_the_query_owned_by_this_run(
     assert isinstance(error_info.value.__cause__, OSError)
     assert own_query.stop_calls == 1
     assert caller_query.stop_calls == 0
+
+
+def test_initial_start_failure_retries_a_registered_query_cleanup(
+    run_directories: RunDirectories,
+) -> None:
+    own_query = _FakeQuery(run_directories)
+    cleanup_error = OSError("injected first cleanup failure")
+    own_query.stop_errors = [cleanup_error]
+    caller_query = _FakeQuery(run_directories)
+    caller_query.name = "caller-owned-query"
+    stream = _FakeStream(own_query)
+    stream.sparkSession.streams.active = [caller_query, own_query]
+    start_error = OSError("injected start failure after registration")
+    stream.writer.start_error = start_error
+
+    with pytest.raises(RuntimeError, match="before Batch action at index 0") as error_info:
+        _execute_batches(
+            cast(Any, stream),
+            scenario(batch({"id": 1})),
+            run_directories,
+            _BatchCapture(),
+        )
+
+    assert error_info.value.__cause__ is start_error
+    assert error_info.value.__dict__["_streamcase_cleanup_failures"] == (
+        ("streaming query", cleanup_error),
+    )
+    assert own_query.stop_calls == 2
+    assert not own_query.isActive
+    assert caller_query.stop_calls == 0
+    assert list(run_directories.input_dir.iterdir()) == []
 
 
 def test_processing_and_query_stop_failures_keep_both_errors(

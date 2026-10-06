@@ -38,6 +38,7 @@ class _QueryLifecycle:
             output_mode, query_options
         )
         self._query: StreamingQuery | None = None
+        self._pending_start_stream: DataFrame | None = None
 
     def require_active(self) -> StreamingQuery:
         """Return the owned active query, rejecting missing or terminated state."""
@@ -49,7 +50,7 @@ class _QueryLifecycle:
 
     def start(self, stream: DataFrame, *, action_index: int) -> None:
         """Start a query only when the previous one was successfully stopped."""
-        if self._query is not None:
+        if self._query is not None or self._pending_start_stream is not None:
             raise RuntimeError("Stop the owned streaming query before starting another.")
 
         writer = stream.writeStream
@@ -64,17 +65,17 @@ class _QueryLifecycle:
         try:
             self._query = writer.start()
         except Exception as error:
-            with _cleanup_on_exit(
-                "streaming query",
-                lambda: _stop_named_query(stream, self._directories.root.name),
-            ):
+            self._pending_start_stream = stream
+            with _cleanup_on_exit("streaming query", self.stop):
                 raise RuntimeError(
                     f"Could not start the query before Batch action at index {action_index}."
                 ) from error
 
     def stop(self) -> None:
         """Stop once; repeat calls are safe after success or before first start."""
-        if self._query is None:
-            return
-        self._query.stop()
-        self._query = None
+        if self._query is not None:
+            self._query.stop()
+            self._query = None
+        if self._pending_start_stream is not None:
+            _stop_named_query(self._pending_start_stream, self._directories.root.name)
+            self._pending_start_stream = None
