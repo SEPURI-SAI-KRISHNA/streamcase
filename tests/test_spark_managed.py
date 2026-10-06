@@ -136,15 +136,33 @@ def test_directory_cleanup_failure_does_not_replace_build_failure(
     )
 
 
-def test_restart_fails_before_directory_creation(tmp_path: Path) -> None:
-    with pytest.raises(ValueError, match="action at index 1 is not a Batch"):
-        _run_managed_batches(
-            scenario(batch({"id": 1}), restart(), batch({"id": 2})),
-            cast(Any, lambda directories: None),
-            base_dir=tmp_path,
-        )
+def test_restart_rebuilds_stream_with_the_same_managed_directories(tmp_path: Path) -> None:
+    first_stream, first_query = _fake_stream()
+    second_stream, second_query = _fake_stream()
+    streams = [first_stream, second_stream]
+    roots: list[Path] = []
+    checkpoints: list[Path] = []
 
-    assert list(tmp_path.glob("streamcase-run-*")) == []
+    def build_stream(directories: RunDirectories) -> Any:
+        roots.append(directories.root)
+        checkpoints.append(directories.checkpoint_dir)
+        return streams.pop(0)
+
+    result = _run_managed_batches(
+        scenario(batch({"id": 1}), restart(), batch({"id": 2})),
+        build_stream,
+        base_dir=tmp_path,
+    )
+
+    assert_batch_count(result, 0)
+    assert len(roots) == 2
+    assert roots[0] == roots[1]
+    assert checkpoints == [roots[0] / "checkpoint"] * 2
+    assert not roots[0].exists()
+    first_query.stop.assert_called_once_with()
+    second_query.stop.assert_called_once_with()
+    for stream in (first_stream, second_stream):
+        stream.writeStream.option.assert_any_call("checkpointLocation", str(checkpoints[0]))
 
 
 @pytest.mark.parametrize(

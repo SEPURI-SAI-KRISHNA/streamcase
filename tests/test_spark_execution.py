@@ -40,9 +40,13 @@ class _FakeDataFrame:
 
 
 class _FakeQuery:
-    def __init__(self, directories: RunDirectories) -> None:
+    def __init__(
+        self,
+        directories: RunDirectories,
+        processed: list[tuple[str, str]] | None = None,
+    ) -> None:
         self.directories = directories
-        self.processed: list[tuple[str, str]] = []
+        self.processed: list[tuple[str, str]] = [] if processed is None else processed
         self.process_error: Exception | None = None
         self.terminate_during_processing = False
         self.isActive = True
@@ -261,13 +265,13 @@ def test_result_snapshot_is_taken_after_query_shutdown(
     assert_batch_count(result, 1)
 
 
-def test_restart_is_rejected_before_query_start_or_publication(
+def test_restart_requires_rebuild_callback_before_query_start_or_publication(
     run_directories: RunDirectories,
 ) -> None:
     query = _FakeQuery(run_directories)
     stream = _FakeStream(query)
 
-    with pytest.raises(ValueError, match="action at index 1 is not a Batch"):
+    with pytest.raises(ValueError, match="Restart actions require a stream rebuild callback"):
         _execute_batches(
             cast(Any, stream),
             scenario(batch({"id": 1}), restart(), batch({"id": 2})),
@@ -277,6 +281,103 @@ def test_restart_is_rejected_before_query_start_or_publication(
 
     assert stream.writer_accesses == 0
     assert list(run_directories.input_dir.iterdir()) == []
+
+
+def test_restart_rebuilds_stream_and_reuses_checkpoint_and_capture(
+    run_directories: RunDirectories,
+) -> None:
+    first_query = _FakeQuery(run_directories)
+    replacement_query = _FakeQuery(run_directories, first_query.processed)
+    first_stream = _FakeStream(first_query)
+    replacement_stream = _FakeStream(replacement_query)
+    capture = _BatchCapture()
+    rebuild_calls = 0
+
+    def rebuild_stream() -> Any:
+        nonlocal rebuild_calls
+        rebuild_calls += 1
+        assert first_query.stop_calls == 1
+        assert not first_query.isActive
+        return replacement_stream
+
+    result = _execute_batches(
+        cast(Any, first_stream),
+        scenario(batch({"id": 1}), restart(), batch({"id": 2})),
+        run_directories,
+        capture,
+        output_mode="update",
+        query_options={"customOption": "enabled"},
+        rebuild_stream=rebuild_stream,
+    )
+
+    assert rebuild_calls == 1
+    assert first_query is not replacement_query
+    assert first_query.stop_calls == replacement_query.stop_calls == 1
+    assert first_query.processed == [
+        ("batch-00000000000000000000.json", '{"id":1}\n'),
+        ("batch-00000000000000000001.json", '{"id":2}\n'),
+    ]
+    for stream in (first_stream, replacement_stream):
+        assert stream.writer.start_calls == 1
+        assert stream.writer.callback == capture.callback
+        assert stream.writer.output_mode == "update"
+        assert stream.writer.options == {
+            "customOption": "enabled",
+            "checkpointLocation": str(run_directories.checkpoint_dir),
+        }
+        assert stream.writer.query_name == run_directories.root.name
+    assert [captured.batch_id for captured in result.batches] == [0, 1]
+    assert_rows_equal(result, [{"id": 1}, {"id": 2}])
+
+
+def test_restart_build_failure_has_action_context_and_stops_old_query(
+    run_directories: RunDirectories,
+) -> None:
+    query = _FakeQuery(run_directories)
+    stream = _FakeStream(query)
+    build_error = OSError("injected stream rebuild failure")
+
+    def fail_rebuild() -> Any:
+        raise build_error
+
+    with pytest.raises(RuntimeError, match="Restart action at index 1 failed") as error_info:
+        _execute_batches(
+            cast(Any, stream),
+            scenario(batch({"id": 1}), restart(), batch({"id": 2})),
+            run_directories,
+            _BatchCapture(),
+            rebuild_stream=fail_rebuild,
+        )
+
+    assert error_info.value.__cause__ is build_error
+    assert query.stop_calls == 1
+    assert len(query.processed) == 1
+
+
+def test_restart_query_start_failure_has_action_context(
+    run_directories: RunDirectories,
+) -> None:
+    first_query = _FakeQuery(run_directories)
+    replacement_query = _FakeQuery(run_directories, first_query.processed)
+    first_stream = _FakeStream(first_query)
+    replacement_stream = _FakeStream(replacement_query)
+    start_error = OSError("injected replacement start failure")
+    replacement_stream.writer.start_error = start_error
+
+    with pytest.raises(RuntimeError, match="Restart action at index 1 failed") as error_info:
+        _execute_batches(
+            cast(Any, first_stream),
+            scenario(batch({"id": 1}), restart(), batch({"id": 2})),
+            run_directories,
+            _BatchCapture(),
+            rebuild_stream=lambda: cast(Any, replacement_stream),
+        )
+
+    assert isinstance(error_info.value.__cause__, RuntimeError)
+    assert error_info.value.__cause__.__cause__ is start_error
+    assert first_query.stop_calls == 1
+    assert replacement_stream.writer.start_calls == 1
+    assert len(first_query.processed) == 1
 
 
 def test_query_start_failure_identifies_first_action(

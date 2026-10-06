@@ -190,14 +190,12 @@ After successful execution, the runner stops its query and returns a
 
 ## Restart staging
 
-The first Phase 3 implementation supports batch-only scenarios. If a scenario
-contains `Restart`, it fails validation before creating directories or starting
-a query.
-
-Phase 4 removes that temporary restriction. A restart will stop the active query
-and recreate the source, transformation, callback, and query with the same
-checkpoint and caller-owned session. The transformation callable may therefore
-be invoked more than once during one final API call.
+The first Phase 3 implementation supported batch-only scenarios and rejected
+`Restart` before creating directories or starting a query. Phase 4 removed
+that temporary restriction. A restart stops the active query and recreates the
+source, transformation, callback, and query with the same checkpoint and
+caller-owned session. The transformation callable may therefore be invoked
+more than once during one public API call.
 
 ## Validation and failures
 

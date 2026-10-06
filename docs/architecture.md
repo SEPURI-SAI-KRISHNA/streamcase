@@ -4,8 +4,8 @@
 
 Streamcase aims to make small streaming tests deterministic, readable, isolated,
 and diagnosable. The backend-independent
-[scenario model](scenario-model.md), result layer, and batch-only Spark runner
-are implemented. Restart execution remains planned. Streamcase does not emulate
+[scenario model](scenario-model.md), result layer, and Spark runner
+are implemented. Streamcase does not emulate
 Spark; tests run through Spark's public Structured Streaming interfaces.
 
 ## Execution model
@@ -23,14 +23,14 @@ checkpoint <--- stop/start action           foreachBatch capture
                                       rows + result assertions
 ```
 
-The batch-only `run_scenario()` call creates an isolated directory containing
+The `run_scenario()` call creates an isolated directory containing
 its input and checkpoint data. `maxFilesPerTrigger=1` preserves logical batch
 boundaries. After writing a file atomically, Streamcase calls
 `processAllAvailable()`, which Spark documents as a testing-oriented
 synchronization method.
 
-A planned `Restart` action will stop the active query and recreate the source,
-transformation, and query with the same checkpoint. The batch-only runner
+A `Restart` action stops the active query and recreates the source,
+transformation, and query with the same checkpoint. The runner
 records rows in the Python driver through `foreachBatch` and normalizes them
 into backend-independent result objects.
 
@@ -38,7 +38,7 @@ The accepted [Spark runner API and ownership decision](design/0002-spark-runner-
 defines a caller-owned `SparkSession`, the optional `streamcase.spark`
 namespace, deterministic source/query configuration, and runner-owned cleanup.
 The implemented [public Spark runner contract](spark-runner.md) covers the
-batch-only phase.
+current batch and restart behavior.
 
 ## Boundaries
 
@@ -143,12 +143,14 @@ rows. Query configuration and lifecycle remain separate responsibilities.
 
 ## Batch execution
 
-The private batch executor uses one lifecycle controller to start a streaming
-query with the run's checkpoint and driver capture callback. It validates that
-every scenario action is a `Batch` before starting the query. For each action
-in order, it atomically publishes one input file and calls Spark's
-`processAllAvailable()` before proceeding. There are no time-based sleeps
-between actions.
+The private executor uses one lifecycle controller to start a streaming query
+with the run's checkpoint and driver capture callback. For each `Batch` action,
+it atomically publishes one input file and calls Spark's
+`processAllAvailable()` before proceeding. At a `Restart`, it stops the query,
+rebuilds the source and caller transformation, and starts a replacement with
+the same checkpoint, query configuration, and capture callback. One input
+writer keeps file numbering monotonic across the boundary. There are no
+time-based sleeps between actions.
 
 The executor defaults to append output mode and accepts the approved complete
 and update modes. Optional query-writer settings are copied and checked before
@@ -176,7 +178,7 @@ If work and cleanup both fail, the original exception remains primary. Cleanup
 failures are attached to it and included in the traceback on supported Python
 versions; a Python 3.10 fallback includes their context in the original error
 message. A cleanup failure after otherwise successful work is surfaced.
-`Restart` execution remains follow-up work.
+More exhaustive restart failure cleanup is tracked as follow-up work.
 
 ## Query lifecycle transitions
 
@@ -192,7 +194,7 @@ Each successful start applies the same approved output mode, writer options,
 checkpoint location, query name, and capture callback. A start failure attempts
 to stop only this run's named query if Spark registered it before raising.
 The controller never stops the caller-owned session or unrelated queries.
-Execution of `Restart` actions remains a separate Phase 4 change.
+The executor uses these transitions for `Restart` actions.
 
 ## Future extensions
 

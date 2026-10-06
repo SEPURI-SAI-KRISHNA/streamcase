@@ -8,13 +8,15 @@ All notable changes will be documented in this file. The format is based on
 
 ### Added
 
+- Public `Restart` execution that rebuilds the Spark stream and resumes later
+  batches with the same checkpoint, query settings, and output capture.
 - A private Spark query lifecycle controller with idempotent stop and
   restart-safe writer configuration.
 - A two-batch public Spark runner quick start and matching integration test.
-- Public batch-only `streamcase.spark.run_scenario` API with caller-owned session,
+- Public `streamcase.spark.run_scenario` API with caller-owned session,
   transformation validation, and optional PySpark installation guidance.
 - Validated Spark query output modes and non-conflicting writer options for the
-  private batch runner.
+  private scenario runner.
 - Managed cleanup for runner-owned Spark queries and run directories, preserving
   execution failures when cleanup also fails.
 - Immutable `ScenarioResult` assembly after successful Spark batch execution,
