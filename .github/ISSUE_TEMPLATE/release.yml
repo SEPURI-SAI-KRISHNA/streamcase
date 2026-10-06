@@ -34,7 +34,7 @@ body:
     id: scope
     attributes:
       label: Scope and changelog context
-      description: Summarize the intended release and link the relevant milestone, issues, pull requests, or changelog section.
+      description: Summarize included public APIs, tested version combinations, known exclusions, and the relevant milestone, issues, pull requests, or changelog section. For 0.1.0a1, use the first-alpha scope in ROADMAP.md.
     validations:
       required: true
 
@@ -44,11 +44,14 @@ body:
       label: Preparation
       description: Update these items as release preparation progresses.
       options:
-        - label: The release scope and target version are approved.
+        - label: The release scope, tested compatibility combination, exclusions, and target version are approved.
+        - label: The PyPI name, package metadata, wheel, and sdist have been audited.
         - label: The release pull request updates the package version and changelog.
         - label: The release pull request is approved, all required checks pass, and it is merged.
-        - label: CI is green on `main` for every supported Python and Spark line.
+        - label: Core Python compatibility CI and the documented Spark integration combination are green on `main`.
         - label: Dependency, license, and security reports have been reviewed.
+        - label: Clean wheel and sdist installations have passed release smoke tests.
+        - label: The documented GitHub/PyPI artifact flow matches the release workflow.
         - label: The PyPI Trusted Publisher and protected `pypi` environment are ready.
 
   - type: checkboxes
@@ -57,7 +60,7 @@ body:
       label: Publication
       description: Never replace these automated steps with a workstation upload.
       options:
-        - label: The signed version commit and matching `v`-prefixed tag are prepared from reviewed `main`.
+        - label: The reviewed version commit has the required DCO sign-off and the matching `v`-prefixed tag meets the documented provenance policy.
         - label: A draft GitHub release has accurate notes and identifies the matching tag.
         - label: Publishing the GitHub release triggered the protected release workflow.
         - label: The release workflow built, validated, and published the distributions successfully.
@@ -70,6 +73,7 @@ body:
       options:
         - label: The PyPI version, metadata, artifact names, and hashes are correct.
         - label: The wheel installs into a clean supported environment.
+        - label: The sdist builds and installs into a clean supported environment.
         - label: Importing `streamcase` reports the expected version.
         - label: The README example passes against a supported Spark version.
         - label: Release results, follow-up issues, and the announcement are recorded.

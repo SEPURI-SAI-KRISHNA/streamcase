@@ -6,15 +6,15 @@ tested dependency line.
 
 ## Initial support matrix
 
-| Component | Supported versions | Policy |
+| Scope | Tested combination | Policy |
 | --- | --- | --- |
-| Python | 3.10, 3.11, 3.12, and 3.13 | Every version runs the core test suite |
-| PySpark | 4.2.x (`>=4.2,<4.3`) | The Spark integration lane uses this minor line |
-| Java | 17 | The Spark integration lane uses this LTS baseline |
+| Backend-independent package | Python 3.10, 3.11, 3.12, and 3.13; no Spark or Java required | Every listed Python version runs the core test suite |
+| Spark runner | Python 3.11, Java 17, and PySpark 4.2.x (`>=4.2,<4.3`) together | The dedicated Spark integration lane tests this complete combination in local mode |
 
-All three rows apply together. A Python version passing the core suite alone does
-not establish Spark compatibility; the dedicated integration lane is the source
-of truth for the complete combination.
+Python 3.10, 3.12, or 3.13 passing the core suite does not establish Spark
+runner compatibility on those versions. The `spark` extra can be installed on
+them, but the first-alpha runner support claim covers only the complete
+combination tested in the dedicated Spark integration lane.
 
 The path-filtered Spark workflow runs on runner, packaging, compatibility-policy,
 and Spark-test changes. It reports the Python, Java, and PySpark versions before
@@ -22,9 +22,10 @@ starting local-mode integration tests. The ordinary unit and Python compatibilit
 jobs explicitly exclude tests marked `spark` and do not install PySpark.
 
 Apache Spark 4.2 supports Python 3.10 or newer and Java 17, 21, and 25. Streamcase
-starts with the smaller matrix above so every advertised combination can be
-verified in CI. Java 21 and 25, other Spark 4.x minors, and Spark 3.x may work but
-are not supported until dedicated compatibility issues add them to the matrix.
+starts with the smaller matrix above so the advertised Spark runner combination
+is verified in CI. Other Python versions with Spark, Java 21 and 25, other Spark
+4.x minors, and Spark 3.x may work but are not supported until dedicated
+compatibility issues add them to the matrix.
 
 The upstream requirements are documented in the
 [Spark 4.2 overview](https://spark.apache.org/docs/4.2.0/index.html) and
@@ -63,7 +64,7 @@ Install a Java 17 JDK separately and make it available through `JAVA_HOME` or
 - Importing `streamcase` and its backend-independent APIs does not import
   PySpark or initialize a JVM.
 - Importing the `streamcase.spark` namespace requires the extra and
-  produce an actionable installation error when it is absent.
+  produces an actionable installation error when it is absent.
 - The installed PySpark minor version should match a remote Spark cluster's
   minor version. Streamcase's initial runner and CI use local mode.
 
@@ -72,10 +73,10 @@ compatibility expansions to be reviewed independently.
 
 ## Updating the policy
 
-Support for a new Spark minor, Python version, or Java runtime requires a scoped
-issue and pull request that update all of the following together:
+Support for a new Spark minor, Spark-runner Python version, or Java runtime
+requires a scoped issue and pull request that update the relevant parts of:
 
-1. the `spark` extra in `pyproject.toml`;
+1. the `spark` extra or Python metadata in `pyproject.toml`, if needed;
 2. this support matrix;
 3. the Spark integration CI lane; and
 4. any version-specific runner compatibility code or tests.

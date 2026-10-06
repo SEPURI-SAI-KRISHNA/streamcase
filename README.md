@@ -8,6 +8,8 @@ Structured Streaming tests.
 
 > **Status:** the Spark runner, including checkpoint-preserving restart actions,
 > scenario model, results, and assertions are implemented. No release is published yet.
+> The proposed [first-alpha scope](ROADMAP.md#first-alpha-candidate-010a1) is
+> narrower than the longer-term roadmap.
 
 ## Problem
 
