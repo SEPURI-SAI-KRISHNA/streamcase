@@ -51,7 +51,7 @@ executes the same two-batch workflow and checks query and directory cleanup.
 
 The caller creates and eventually stops `spark`. `run_scenario` never creates or
 stops a session and does not touch unrelated streaming queries. It creates a
-unique input/checkpoint directory and owns only the query it starts.
+unique input/checkpoint directory and owns only the queries it starts.
 
 ## Parameters
 
@@ -60,7 +60,8 @@ Streamcase `Scenario` containing `Batch` actions and optional `Restart`
 boundaries. At each restart, Streamcase stops its query, rebuilds the source
 and transformation, and starts a replacement using the same checkpoint and
 query settings. The caller's `transform` callable may therefore run more than
-once per scenario. A more detailed restart example is tracked separately.
+once per scenario. See the [checkpoint restart guide](restart-scenarios.md) for
+a runnable example, guarantees, and limits.
 Failures identify the restart action and transition; Streamcase attempts query
 and directory cleanup without replacing the original exception.
 
