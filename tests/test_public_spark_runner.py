@@ -88,7 +88,7 @@ def test_public_runner_composes_validated_source_and_managed_execution(
     spark = _FakeSparkSession()
     source = _FakeDataFrame(spark)
     output = _FakeDataFrame(spark, columns=["id", "value"])
-    expected_scenario = scenario(batch({"id": 1}))
+    expected_scenario = scenario(batch({"id": 1}), restart(), batch({"id": 2}))
     source_calls: list[tuple[object, object, object, object]] = []
     managed_calls: list[dict[str, object]] = []
     transformation_calls: list[object] = []
@@ -172,10 +172,6 @@ def test_public_runner_rejects_invalid_arguments_before_managed_execution(
         spark_api.run_scenario(object(), valid_scenario, **valid)
     with pytest.raises(TypeError, match="scenario must be"):
         spark_api.run_scenario(spark, object(), **valid)
-    with pytest.raises(ValueError, match="not a Batch"):
-        spark_api.run_scenario(
-            spark, scenario(batch({"id": 1}), restart(), batch({"id": 2})), **valid
-        )
     with pytest.raises(TypeError, match="schema must be"):
         spark_api.run_scenario(spark, valid_scenario, schema=None, transform=lambda frame: frame)
     with pytest.raises(ValueError, match="schema must not be empty"):

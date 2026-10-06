@@ -17,7 +17,6 @@ except ModuleNotFoundError as error:
     ) from error
 
 from streamcase._directories import RunDirectories
-from streamcase._spark_execution import _require_batch_only
 from streamcase._spark_managed import _run_managed_batches
 from streamcase._spark_query_options import _prepare_query_configuration
 from streamcase._spark_source import _build_json_stream, _copy_source_options
@@ -60,12 +59,11 @@ def run_scenario(
     base_dir: str | os.PathLike[str] | None = None,
     retain_artifacts: bool = False,
 ) -> ScenarioResult:
-    """Run a batch-only scenario using a caller-owned Spark session."""
+    """Run a scenario using a caller-owned Spark session."""
     if not isinstance(spark, SparkSession):
         raise TypeError("spark must be a PySpark SparkSession.")
     if not isinstance(scenario, Scenario):
         raise TypeError("scenario must be a Streamcase Scenario.")
-    _require_batch_only(scenario)
     if not isinstance(schema, (StructType, str)):
         raise TypeError("schema must be a Spark StructType or DDL string.")
     if isinstance(schema, str) and not schema.strip():

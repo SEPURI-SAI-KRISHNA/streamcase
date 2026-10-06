@@ -1,6 +1,6 @@
 # Spark runner contract
 
-The public batch-only runner lives in `streamcase.spark`. Install the Spark extra
+The public scenario runner lives in `streamcase.spark`. Install the Spark extra
 and provide a Java 17 runtime before using it; see the
 [compatibility policy](spark-compatibility.md). Importing the core `streamcase`
 package does not require PySpark. Importing `streamcase.spark` without the extra
@@ -55,9 +55,12 @@ unique input/checkpoint directory and owns only the query it starts.
 
 ## Parameters
 
-`spark` must be a caller-owned PySpark `SparkSession`; `test_scenario` must be a
-Streamcase `Scenario` containing only `Batch` actions for now. A `Restart`
-action fails validation before directories are created.
+`spark` must be a caller-owned PySpark `SparkSession`; `scenario` must be a
+Streamcase `Scenario` containing `Batch` actions and optional `Restart`
+boundaries. At each restart, Streamcase stops its query, rebuilds the source
+and transformation, and starts a replacement using the same checkpoint and
+query settings. The caller's `transform` callable may therefore run more than
+once per scenario. A more detailed restart example is tracked separately.
 
 `schema` is a non-empty Spark DDL string or `StructType`. `transform` receives
 the streaming JSON input DataFrame and must return a streaming DataFrame from

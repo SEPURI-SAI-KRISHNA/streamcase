@@ -58,7 +58,7 @@ raises `TypeError` and reports the zero-based row index and offending key type.
 `Batch` and `Restart` actions. The scenario container is frozen and has stable
 value equality.
 
-A restart represents a future stop and start of the same transformed streaming
+A restart represents a stop and start of the same transformed streaming
 query with the same checkpoint. It must be surrounded by batches:
 
 ```text
