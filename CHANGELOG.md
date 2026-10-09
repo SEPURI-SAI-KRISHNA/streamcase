@@ -6,6 +6,16 @@ All notable changes will be documented in this file. The format is based on
 
 ## [Unreleased]
 
+No changes yet.
+
+## [0.1.0a2] - Candidate (not published)
+
+This follow-up alpha is prepared but has no publication date. It corrects
+PyPI-facing documentation from `0.1.0a1` without changing runtime APIs or
+dependencies. See the [candidate release notes](docs/releases/0.1.0a2.md)
+for the tested support matrix and limitations. Publication and verification
+will be tracked in a separate release issue.
+
 ### Documentation
 
 - Replace pre-publication README installation instructions with PyPI guidance
