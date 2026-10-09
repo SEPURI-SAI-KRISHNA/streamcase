@@ -11,11 +11,22 @@
 
 ## Candidate
 
-Create a signed version commit and tag only after the release pull request is
-approved and merged. Tags use `vMAJOR.MINOR.PATCH` or a valid prerelease suffix.
-Before building any distribution, CI requires the GitHub release tag to equal
-`v` followed by the package version exactly. A mismatch stops the release
-workflow before publication.
+Create the version change through a reviewed pull request and merge it to the
+protected `main` branch before tagging. Every human-authored pull-request commit
+requires a DCO `Signed-off-by` trailer. That trailer certifies contribution
+rights; it is **not** a cryptographic signature. For the first alpha,
+cryptographic commit and tag signatures are not required, and the release
+workflow does not claim to verify them. This policy can be strengthened in a
+separate issue before later releases.
+
+Create or select the release tag only after the version pull request is merged.
+Tags use `vMAJOR.MINOR.PATCH` or a valid prerelease suffix. Before building any
+distribution, the release workflow checks that the event tag still resolves to
+the event's checked-out commit, that this commit is in the fetched `main`
+history, and that the tag is exactly `v` followed by the package version. A
+missing, moved, off-main, or version-mismatched tag stops the build before
+publication. Main-branch ancestry relies on the repository's branch protection
+and PR review policy; it is not proof of an individual review by itself.
 
 The GitHub release triggers the release workflow. CI builds the source and wheel
 artifacts once, validates them with Twine, stores them on the GitHub release, and
