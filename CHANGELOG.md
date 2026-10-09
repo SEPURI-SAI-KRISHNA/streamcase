@@ -6,8 +6,21 @@ All notable changes will be documented in this file. The format is based on
 
 ## [Unreleased]
 
+No changes yet.
+
+## [0.1.0a1] - Candidate (not published)
+
+This prerelease is prepared but has no publication date yet. See the
+[first-alpha release notes](docs/releases/0.1.0a1.md) for the tested support
+matrix and known limitations. Add the publication date only after #99 verifies
+the release.
+
 ### Added
 
+- Clean wheel and sdist installation smoke checks for the core package and the
+  supported Spark combination.
+- Trusted Publishing release flow with checked tag provenance and SHA-256
+  verification across the Actions-artifact transfer to PyPI.
 - Public `Restart` execution that rebuilds the Spark stream and resumes later
   batches with the same checkpoint, query settings, and output capture.
 - A private Spark query lifecycle controller with idempotent stop and

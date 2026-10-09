@@ -11,6 +11,9 @@ Structured Streaming tests.
 > The proposed [first-alpha scope](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/ROADMAP.md#first-alpha-candidate-010a1) is
 > narrower than the longer-term roadmap.
 
+The [0.1.0a1 candidate notes](docs/releases/0.1.0a1.md) describe the tested
+support matrix and limitations. Publication is tracked separately in #99.
+
 ## Problem
 
 Ordinary DataFrame assertions do not exercise streaming semantics such as
