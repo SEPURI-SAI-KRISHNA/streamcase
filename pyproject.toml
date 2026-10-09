@@ -9,6 +9,7 @@ description = "Deterministic testing for Apache Spark Structured Streaming pipel
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
 authors = [
   { name = "Sepuri Sai Krishna" },
 ]
@@ -35,9 +36,11 @@ dependencies = []
 
 [project.urls]
 Homepage = "https://github.com/SEPURI-SAI-KRISHNA/streamcase"
-Documentation = "https://github.com/SEPURI-SAI-KRISHNA/streamcase#readme"
+Documentation = "https://github.com/SEPURI-SAI-KRISHNA/streamcase/tree/main/docs"
 Issues = "https://github.com/SEPURI-SAI-KRISHNA/streamcase/issues"
 Repository = "https://github.com/SEPURI-SAI-KRISHNA/streamcase"
+Changelog = "https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/CHANGELOG.md"
+Security = "https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/SECURITY.md"
 
 [project.optional-dependencies]
 spark = [
@@ -62,6 +65,7 @@ path = "src/streamcase/_version.py"
 [tool.hatch.build.targets.sdist]
 include = [
   "/src",
+  "/scripts",
   "/tests",
   "/CHANGELOG.md",
   "/CONTRIBUTING.md",
