@@ -6,13 +6,15 @@
 Streamcase is an early-development pytest-oriented toolkit for deterministic Apache Spark
 Structured Streaming tests.
 
-> **Status:** the Spark runner, including checkpoint-preserving restart actions,
-> scenario model, results, and assertions are implemented. No release is published yet.
-> The proposed [first-alpha scope](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/ROADMAP.md#first-alpha-candidate-010a1) is
-> narrower than the longer-term roadmap.
+> **Alpha status:** the first prerelease is available on PyPI. Its Spark runner,
+> including checkpoint-preserving restart actions, scenario model, results, and
+> assertions are implemented. The API is experimental and may change in later
+> alphas; the [first-alpha scope](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/ROADMAP.md#first-alpha-release-010a1)
+> is narrower than the longer-term roadmap.
 
-The [0.1.0a1 candidate notes](docs/releases/0.1.0a1.md) describe the tested
-support matrix and limitations. Publication is tracked separately in #99.
+The [first-alpha release notes](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/releases/0.1.0a1.md)
+describe the tested support matrix and limitations. Check
+[PyPI](https://pypi.org/project/streamcase/) for available versions.
 
 ## Problem
 
@@ -23,22 +25,24 @@ tests while executing against Spark's public Structured Streaming interfaces.
 
 ## Installation
 
-Until the first PyPI release, install the lightweight backend-independent
-package from this checkout with:
+Install the lightweight backend-independent package from PyPI. The `--pre`
+option allows alpha releases; pin a version when reproducibility matters:
 
 ```shell
-python -m pip install -e .
+python -m pip install --pre streamcase
 ```
 
-Install the approved PySpark line for the Spark runner from this checkout with:
+For the Spark runner, install the optional `spark` extra and provide a
+compatible Java JDK separately:
 
 ```shell
-python -m pip install -e ".[spark]"
+python -m pip install --pre "streamcase[spark]"
 ```
 
 The Spark extra keeps PySpark out of the core dependency set. See the
 [Spark compatibility policy](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/spark-compatibility.md) for the supported
-Python, Java, and Spark combination.
+Python, Java, and Spark combination. Contributors working from a checkout can
+use the [editable-install instructions](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/CONTRIBUTING.md#development-setup).
 
 ## Available today
 

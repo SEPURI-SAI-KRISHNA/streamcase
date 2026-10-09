@@ -35,17 +35,17 @@ The upstream requirements are documented in the
 
 ## Installation
 
-After the first PyPI release, the default installation will contain no PySpark
-dependency:
+The core package is available on PyPI without a PySpark dependency. Use
+`--pre` to allow alpha releases:
 
 ```shell
-python -m pip install streamcase
+python -m pip install --pre streamcase
 ```
 
-The published `spark` extra will install the Spark integration dependency:
+The published `spark` extra installs the Spark integration dependency:
 
 ```shell
-python -m pip install "streamcase[spark]"
+python -m pip install --pre "streamcase[spark]"
 ```
 
 For an editable contributor installation that includes both development and
