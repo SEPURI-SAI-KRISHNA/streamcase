@@ -28,16 +28,38 @@ missing, moved, off-main, or version-mismatched tag stops the build before
 publication. Main-branch ancestry relies on the repository's branch protection
 and PR review policy; it is not proof of an individual review by itself.
 
-The GitHub release triggers the release workflow. CI builds the source and wheel
-artifacts once, validates them with Twine, stores them on the GitHub release, and
-publishes the exact same files to PyPI through OpenID Connect.
+## Artifact path
+
+The GitHub release is a tag and release-notes page, **not** a wheel or sdist
+download location. It must not promise attached distribution assets. The release
+workflow builds one wheel and one sdist from the verified tag, validates them
+with Twine, records their SHA-256 hashes in `SHA256SUMS`, and transfers all three
+files in a temporary `python-distributions` **Actions artifact**. The protected
+`pypi` job downloads that artifact and rejects missing, extra, or changed files
+before moving `SHA256SUMS` out of `dist/`. Only the verified wheel and sdist are
+then published to PyPI through OpenID Connect. No workstation upload or rebuild
+occurs between verification and publication.
+
+Actions artifacts expire according to repository retention settings and are not
+GitHub release assets or a permanent distribution mirror. PyPI is the durable
+distribution location. This flow also works when GitHub release immutability is
+enabled: published immutable releases cannot gain or replace assets later. If
+GitHub release attachments become a requirement, design and test a separate
+draft-time attachment flow before changing this policy.
 
 ## Verification
 
 - Install the wheel into a clean environment.
 - Import `streamcase` and verify `streamcase.__version__`.
 - Run the README example against a supported Spark version.
-- Confirm PyPI metadata and artifact hashes.
+- Compare the wheel and sdist filenames and SHA-256 hashes in the workflow's
+  `SHA256SUMS` output with `urls[].filename` and `urls[].digests.sha256` from
+  `https://pypi.org/pypi/streamcase/<version>/json`. Record the comparison in
+  the release issue. The Actions artifact's archive digest is not a substitute
+  for checking the two individual distribution files.
 - Announce the release only after verification succeeds.
 
+If the transfer hash check fails, the publish job stops before the PyPI action.
+If PyPI's published filenames or hashes do not match, do not announce the
+release or attempt to overwrite files; record the discrepancy and investigate.
 Never upload release artifacts manually from a developer workstation.

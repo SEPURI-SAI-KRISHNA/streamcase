@@ -66,7 +66,10 @@ jobs:
       - name: Validate distributions
         run: python -m twine check dist/*
 
-      - name: Upload distributions
+      - name: Record distribution hashes
+        run: python scripts/check_distribution_hashes.py record dist
+
+      - name: Upload temporary Actions artifact
         uses: actions/upload-artifact@v4
         with:
           name: python-distributions
@@ -81,13 +84,30 @@ jobs:
       name: pypi
       url: https://pypi.org/project/streamcase/
     permissions:
+      contents: read
       id-token: write
     steps:
+      - name: Check out verified source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - name: Download distributions
         uses: actions/download-artifact@v4
         with:
           name: python-distributions
           path: dist/
+
+      - name: Verify downloaded distribution hashes
+        run: |
+          python scripts/check_distribution_hashes.py verify dist
+          mv dist/SHA256SUMS SHA256SUMS
 
       - name: Publish with Trusted Publishing
         uses: pypa/gh-action-pypi-publish@release/v1
