@@ -17,9 +17,11 @@ them, but the first-alpha runner support claim covers only the complete
 combination tested in the dedicated Spark integration lane.
 
 The path-filtered Spark workflow runs on runner, packaging, compatibility-policy,
-and Spark-test changes. It reports the Python, Java, and PySpark versions before
-starting local-mode integration tests. The ordinary unit and Python compatibility
-jobs explicitly exclude tests marked `spark` and do not install PySpark.
+smoke-check, and Spark-test changes. It builds both distributions, installs each
+with the `spark` extra in its own clean environment, and runs a local two-batch
+smoke example. It also runs the Spark integration suite from the installed wheel.
+The ordinary quality job smoke-tests both distributions without PySpark; unit
+and Python compatibility jobs exclude tests marked `spark`.
 
 Apache Spark 4.2 supports Python 3.10 or newer and Java 17, 21, and 25. Streamcase
 starts with the smaller matrix above so the advertised Spark runner combination

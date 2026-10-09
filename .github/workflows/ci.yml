@@ -48,6 +48,22 @@ jobs:
       - name: Validate distributions
         run: python -m twine check dist/*
 
+      - name: Smoke-test clean wheel install (core)
+        run: |
+          artifacts=(dist/*.whl)
+          test "${#artifacts[@]}" -eq 1 && test -f "${artifacts[0]}"
+          python -m venv .tmp/smoke-wheel
+          .tmp/smoke-wheel/bin/python -m pip install "${artifacts[0]}"
+          .tmp/smoke-wheel/bin/python -I scripts/smoke_installed.py core
+
+      - name: Smoke-test clean sdist install (core)
+        run: |
+          artifacts=(dist/*.tar.gz)
+          test "${#artifacts[@]}" -eq 1 && test -f "${artifacts[0]}"
+          python -m venv .tmp/smoke-sdist
+          .tmp/smoke-sdist/bin/python -m pip install "${artifacts[0]}"
+          .tmp/smoke-sdist/bin/python -I scripts/smoke_installed.py core
+
       - name: Upload distributions
         uses: actions/upload-artifact@v4
         with:
