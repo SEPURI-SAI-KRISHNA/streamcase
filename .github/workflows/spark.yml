@@ -7,6 +7,7 @@ on:
       - "docs/spark-compatibility.md"
       - "pyproject.toml"
       - "src/**"
+      - "scripts/smoke_installed.py"
       - "tests/spark/**"
   push:
     branches:
@@ -16,6 +17,7 @@ on:
       - "docs/spark-compatibility.md"
       - "pyproject.toml"
       - "src/**"
+      - "scripts/smoke_installed.py"
       - "tests/spark/**"
   workflow_dispatch:
 
@@ -30,9 +32,8 @@ jobs:
   spark:
     name: Spark 4.2 / Python 3.11 / Java 17
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
-      PYSPARK_PYTHON: python
       SPARK_LOCAL_IP: 127.0.0.1
     steps:
       - name: Check out source
@@ -51,14 +52,36 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Install Spark test dependencies
-        run: python -m pip install -e ".[test,spark]"
+      - name: Build distributions
+        run: |
+          python -m pip install "build>=1.2,<2"
+          python -m build
+
+      - name: Smoke-test clean wheel install (Spark)
+        run: |
+          artifacts=(dist/*.whl)
+          test "${#artifacts[@]}" -eq 1 && test -f "${artifacts[0]}"
+          python -m venv .tmp/smoke-spark-wheel
+          .tmp/smoke-spark-wheel/bin/python -m pip install "${artifacts[0]}[test,spark]"
+          export PYSPARK_PYTHON="$PWD/.tmp/smoke-spark-wheel/bin/python"
+          .tmp/smoke-spark-wheel/bin/python -I scripts/smoke_installed.py spark
+
+      - name: Smoke-test clean sdist install (Spark)
+        run: |
+          artifacts=(dist/*.tar.gz)
+          test "${#artifacts[@]}" -eq 1 && test -f "${artifacts[0]}"
+          python -m venv .tmp/smoke-spark-sdist
+          .tmp/smoke-spark-sdist/bin/python -m pip install "${artifacts[0]}[spark]"
+          export PYSPARK_PYTHON="$PWD/.tmp/smoke-spark-sdist/bin/python"
+          .tmp/smoke-spark-sdist/bin/python -I scripts/smoke_installed.py spark
 
       - name: Report runtime versions
         run: |
-          python --version
+          .tmp/smoke-spark-wheel/bin/python --version
           java -version
-          python -c "import pyspark; print(f'PySpark {pyspark.__version__}')"
+          .tmp/smoke-spark-wheel/bin/python -c "import pyspark; print(f'PySpark {pyspark.__version__}')"
 
-      - name: Run Spark integration tests
-        run: pytest -m spark -v
+      - name: Run Spark integration tests from installed wheel
+        run: |
+          export PYSPARK_PYTHON="$PWD/.tmp/smoke-spark-wheel/bin/python"
+          .tmp/smoke-spark-wheel/bin/python -m pytest -m spark -v

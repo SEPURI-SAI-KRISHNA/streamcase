@@ -8,6 +8,8 @@
 4. Review dependency, license, and security reports.
 5. Confirm the PyPI project has a Trusted Publisher for this GitHub repository and
    the `pypi` environment.
+6. Confirm clean wheel and sdist smoke checks pass in both core-only and supported
+   Spark environments. Neither check may import Streamcase from the source tree.
 
 ## Candidate
 
@@ -49,9 +51,8 @@ draft-time attachment flow before changing this policy.
 
 ## Verification
 
-- Install the wheel into a clean environment.
-- Import `streamcase` and verify `streamcase.__version__`.
-- Run the README example against a supported Spark version.
+- Confirm CI installed the wheel and sdist separately in clean environments,
+  verified `streamcase.__version__`, and ran the supported Spark smoke example.
 - Compare the wheel and sdist filenames and SHA-256 hashes in the workflow's
   `SHA256SUMS` output with `urls[].filename` and `urls[].digests.sha256` from
   `https://pypi.org/pypi/streamcase/<version>/json`. Record the comparison in
