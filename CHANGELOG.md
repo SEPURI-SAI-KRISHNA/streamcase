@@ -6,14 +6,18 @@ All notable changes will be documented in this file. The format is based on
 
 ## [Unreleased]
 
-No changes yet.
+### Documentation
 
-## [0.1.0a1] - Candidate (not published)
+- Replace pre-publication README installation instructions with PyPI guidance
+  that can be included in a future distribution's long description.
+- Record the first alpha's published status and clarify the tested Spark
+  installation path.
 
-This prerelease is prepared but has no publication date yet. See the
+## [0.1.0a1] - 2026-10-09
+
+The first alpha prerelease was published on PyPI on 2026-10-09. See the
 [first-alpha release notes](docs/releases/0.1.0a1.md) for the tested support
-matrix and known limitations. Add the publication date only after #99 verifies
-the release.
+matrix, known limitations, and its historical package-description discrepancy.
 
 ### Added
 

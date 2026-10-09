@@ -34,14 +34,14 @@ on evidence from earlier ones.
 - Same-checkpoint restart guarantees.
 - Failure cleanup and isolation tests.
 
-## First alpha candidate: 0.1.0a1
+## First alpha release: 0.1.0a1
 
-The first alpha is planned after Phase 4 and before Phases 5 and 6. It is a
-candidate, not a published release or a promise of a stable API. Release work
-is tracked in the `0.1.0a1 - First alpha` milestone and must pass the release
-checklist before a tag or publication.
+The first alpha was published on 2026-10-09 after Phase 4 and before Phases 5
+and 6. It is a prerelease, not a promise of a stable API. Release work is
+tracked in the `0.1.0a1 - First alpha` milestone; issue #99 records the
+publication and verification evidence.
 
-The candidate includes:
+The first alpha includes:
 
 - Backend-independent `Batch`, `Restart`, `Scenario`, `CapturedBatch`, and
   `ScenarioResult` models; their public constructors and helpers; and row
@@ -63,14 +63,14 @@ prerequisites for `0.1.0a1`. A later alpha may include them after their own
 issues, tests, and documentation; no stable-release date or API guarantee is
 implied.
 
-The release gate is a separate sequence of small, reviewed changes: audit the
+The release gate followed a sequence of small, reviewed changes: audit the
 PyPI name, metadata, and distributions (#93); decide tag provenance (#94);
 reconcile GitHub release assets with PyPI artifacts (#95); configure Trusted
 Publishing and the protected environment (#96); test clean wheel and sdist
 installs (#97); review the version, changelog, and release notes (#98); then
 publish and verify the alpha (#99). CI, the release checklist, and the
-documented artifact path must agree before publication. No tag or release is
-created by this roadmap change.
+documented artifact path agreed before publication. Issue #126 tracks the
+post-release documentation correction needed before a subsequent prerelease.
 
 ## Phase 5: progress and state assertions
 
