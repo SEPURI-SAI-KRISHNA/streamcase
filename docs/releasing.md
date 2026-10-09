@@ -4,7 +4,8 @@
 
 1. Open a release issue with the target version and checklist.
 2. Confirm CI is green on every supported Spark line.
-3. Update `CHANGELOG.md` and remove the alpha warning when appropriate.
+3. Prepare the version, `CHANGELOG.md`, and `docs/releases/<version>.md` in a
+   reviewed pull request. Keep the alpha warning for alpha releases.
 4. Review dependency, license, and security reports.
 5. Confirm the PyPI project has a Trusted Publisher for this GitHub repository and
    the `pypi` environment.
@@ -22,6 +23,9 @@ workflow does not claim to verify them. This policy can be strengthened in a
 separate issue before later releases.
 
 Create or select the release tag only after the version pull request is merged.
+Use the reviewed candidate notes as the basis for the draft GitHub release;
+replace their candidate status and the changelog's pending date only after
+publication and verification, through a separate reviewed change.
 Tags use `vMAJOR.MINOR.PATCH` or a valid prerelease suffix. Before building any
 distribution, the release workflow checks that the event tag still resolves to
 the event's checked-out commit, that this commit is in the fetched `main`

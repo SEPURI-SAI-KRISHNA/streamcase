@@ -21,7 +21,7 @@ keywords = [
   "testing",
 ]
 classifiers = [
-  "Development Status :: 2 - Pre-Alpha",
+  "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "Intended Audience :: Information Technology",
   "Operating System :: OS Independent",

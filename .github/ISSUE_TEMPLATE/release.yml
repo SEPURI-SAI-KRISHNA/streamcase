@@ -46,7 +46,7 @@ body:
       options:
         - label: The release scope, tested compatibility combination, exclusions, and target version are approved.
         - label: The PyPI name, package metadata, wheel, and sdist have been audited.
-        - label: The release pull request updates the package version and changelog.
+        - label: The release pull request aligns the package version, changelog, candidate notes, and supported compatibility matrix.
         - label: The release pull request is approved, all required checks pass, and it is merged.
         - label: Core Python compatibility CI and the documented Spark integration combination are green on `main`.
         - label: Dependency, license, and security reports have been reviewed.
@@ -61,7 +61,7 @@ body:
       description: Never replace these automated steps with a workstation upload.
       options:
         - label: The reviewed version commit has the required DCO sign-off and the matching `v`-prefixed tag meets the documented provenance policy.
-        - label: A draft GitHub release has accurate notes, identifies the matching tag, and does not promise attached wheel or sdist files.
+        - label: A draft GitHub release uses the reviewed candidate notes, identifies the matching tag, and does not promise attached wheel or sdist files.
         - label: Publishing the GitHub release triggered the protected release workflow.
         - label: The release workflow built the distributions once, verified their hashes after the Actions artifact transfer, and published them successfully.
 
