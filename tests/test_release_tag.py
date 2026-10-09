@@ -13,6 +13,7 @@ from scripts.check_release_tag import load_version, validate_release_tag
     [
         ("v1.2.3", "1.2.3"),
         ("v1.2.3rc1", "1.2.3rc1"),
+        ("v0.1.0a1", "0.1.0a1"),
     ],
 )
 def test_release_tag_accepts_exact_version(tag: str, version: str) -> None:
@@ -30,6 +31,11 @@ def test_release_tag_accepts_exact_version(tag: str, version: str) -> None:
 def test_release_tag_rejects_nonmatching_tag(tag: str) -> None:
     with pytest.raises(ValueError, match=r"expected 'v1\.2\.3'"):
         validate_release_tag(tag, "1.2.3")
+
+
+def test_alpha_release_tag_rejects_version_mismatch() -> None:
+    with pytest.raises(ValueError, match=r"expected 'v0\.1\.0a1'"):
+        validate_release_tag("v0.1.0a2", "0.1.0a1")
 
 
 def test_version_loader_reads_authoritative_source() -> None:
