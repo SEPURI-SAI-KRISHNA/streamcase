@@ -70,7 +70,7 @@ jobs:
         run: python scripts/check_distribution_hashes.py record dist
 
       - name: Upload temporary Actions artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: python-distributions
           path: dist/
