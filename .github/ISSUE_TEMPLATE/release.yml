@@ -61,9 +61,9 @@ body:
       description: Never replace these automated steps with a workstation upload.
       options:
         - label: The reviewed version commit has the required DCO sign-off and the matching `v`-prefixed tag meets the documented provenance policy.
-        - label: A draft GitHub release has accurate notes and identifies the matching tag.
+        - label: A draft GitHub release has accurate notes, identifies the matching tag, and does not promise attached wheel or sdist files.
         - label: Publishing the GitHub release triggered the protected release workflow.
-        - label: The release workflow built, validated, and published the distributions successfully.
+        - label: The release workflow built the distributions once, verified their hashes after the Actions artifact transfer, and published them successfully.
 
   - type: checkboxes
     id: verification
@@ -71,7 +71,7 @@ body:
       label: Verification
       description: Complete these checks before announcing the release.
       options:
-        - label: The PyPI version, metadata, artifact names, and hashes are correct.
+        - label: The PyPI version and metadata are correct, and both published filenames and SHA-256 hashes match the workflow manifest.
         - label: The wheel installs into a clean supported environment.
         - label: The sdist builds and installs into a clean supported environment.
         - label: Importing `streamcase` reports the expected version.
