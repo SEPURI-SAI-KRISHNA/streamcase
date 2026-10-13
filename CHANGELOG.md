@@ -15,6 +15,8 @@ All notable changes will be documented in this file. The format is based on
   state-operator metrics.
 - `assert_input_row_count` for an explicitly selected action and trigger, with
   distinct failures for unavailable counts and mismatches.
+- `assert_watermark` for an explicitly selected progress report, comparing
+  timezone-aware instants or the absence of a reported watermark.
 
 ## [0.1.0a2] - 2026-10-09
 
