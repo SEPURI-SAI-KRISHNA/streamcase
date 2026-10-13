@@ -101,8 +101,9 @@ callbacks by run and Spark batch identity, before another action or restart
 changes the query. It never reuses `lastProgress` for a different action and
 never invents a report for an unmatched callback. A missing report leaves no
 `CapturedProgress` entry; an assertion targeting it fails as unavailable.
-Ambiguous matches fail capture explicitly instead of assigning metrics to the
-wrong action.
+If no-data and data reports reuse a batch ID, a unique report with positive
+`numInputRows` identifies the data trigger. Otherwise ambiguous matches fail
+capture explicitly instead of assigning metrics to the wrong action.
 
 This first API intentionally excludes background/no-data progress with no
 matching `foreachBatch` callback. In particular, it does not guarantee capture

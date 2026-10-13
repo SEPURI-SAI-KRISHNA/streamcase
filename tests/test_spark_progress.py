@@ -77,6 +77,29 @@ def test_multiple_fresh_reports_for_one_callback_are_rejected() -> None:
         )
 
 
+def test_unique_positive_input_report_disambiguates_no_data_update() -> None:
+    data = _report("run-1", 0, "data")
+    data["numInputRows"] = 2
+    idle = _report("run-1", 0, "idle")
+    idle["numInputRows"] = 0
+
+    captured = _capture_action_progress(0, [CapturedBatch(0, [])], [], [data, idle], "run-1")
+
+    assert [(item.action_index, item.batch_id) for item in captured] == [(0, 0)]
+    assert captured[0].num_input_rows is None
+
+
+@pytest.mark.parametrize("counts", [(1, 2), (True, 0)])
+def test_non_unique_or_invalid_input_counts_remain_ambiguous(counts: tuple[object, object]) -> None:
+    first = _report("run-1", 0, "first")
+    first["numInputRows"] = counts[0]
+    second = _report("run-1", 0, "second")
+    second["numInputRows"] = counts[1]
+
+    with pytest.raises(RuntimeError, match=r"multiple progress reports.*batch ID 0"):
+        _capture_action_progress(0, [CapturedBatch(0, [])], [], [first, second], "run-1")
+
+
 @pytest.mark.parametrize("invalid", [None, "", "  "])
 def test_report_key_rejects_missing_run_id(invalid: object) -> None:
     report = _report("run-1", 0, "now")
