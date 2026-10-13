@@ -7,6 +7,16 @@ from datetime import datetime, timezone
 from streamcase.progress import CapturedProgress
 from streamcase.results import ScenarioResult
 
+_STATE_METRICS = frozenset(
+    {
+        "num_rows_total",
+        "num_rows_updated",
+        "num_rows_removed",
+        "num_rows_dropped_by_watermark",
+        "memory_used_bytes",
+    }
+)
+
 
 def _non_negative_index(value: int, name: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
@@ -95,4 +105,59 @@ def assert_watermark(
         raise AssertionError(
             f"Watermark differs for {_progress_context(progress)}. "
             f"Expected: {expected_text}. Actual: {actual_text}."
+        )
+
+
+def assert_state_metric(
+    result: ScenarioResult,
+    metric: str,
+    expected: int,
+    *,
+    action_index: int,
+    trigger_index: int,
+    operator_index: int,
+) -> None:
+    """Assert one documented metric on one state operator in a captured trigger."""
+    if not isinstance(metric, str):
+        raise TypeError(f"metric must be a str; got {type(metric).__name__}.")
+    if metric not in _STATE_METRICS:
+        allowed = ", ".join(sorted(_STATE_METRICS))
+        raise ValueError(f"metric must be one of: {allowed}.")
+    if isinstance(expected, bool) or not isinstance(expected, int):
+        raise TypeError(f"expected must be an int; got {type(expected).__name__}.")
+    if expected < 0:
+        raise ValueError("expected must be non-negative.")
+    operator_index = _non_negative_index(operator_index, "operator_index")
+
+    progress = _select_progress(result, action_index, trigger_index)
+    context = f"{_progress_context(progress)}, operator {operator_index}"
+    operators = progress.state_operators
+    if operators is None:
+        raise AssertionError(
+            f"State operators unavailable for {context}: Spark did not report them."
+        )
+    if operator_index >= len(operators):
+        raise AssertionError(
+            f"State operator {operator_index} unavailable for {_progress_context(progress)}: "
+            f"{len(operators)} operator(s) reported."
+        )
+
+    operator = operators[operator_index]
+    if operator.operator_name is not None:
+        context += f" ({operator.operator_name!r})"
+    values = {
+        "num_rows_total": operator.num_rows_total,
+        "num_rows_updated": operator.num_rows_updated,
+        "num_rows_removed": operator.num_rows_removed,
+        "num_rows_dropped_by_watermark": operator.num_rows_dropped_by_watermark,
+        "memory_used_bytes": operator.memory_used_bytes,
+    }
+    actual = values[metric]
+    if actual is None:
+        raise AssertionError(
+            f"State metric {metric} unavailable for {context}: Spark did not report it."
+        )
+    if actual != expected:
+        raise AssertionError(
+            f"State metric {metric} differs for {context}. Expected: {expected}. Actual: {actual}."
         )

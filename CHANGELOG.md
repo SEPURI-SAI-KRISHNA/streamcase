@@ -17,6 +17,8 @@ All notable changes will be documented in this file. The format is based on
   distinct failures for unavailable counts and mismatches.
 - `assert_watermark` for an explicitly selected progress report, comparing
   timezone-aware instants or the absence of a reported watermark.
+- `assert_state_metric` for a selected state-operator index and documented
+  metric, with explicit failures for missing operators or metric values.
 
 ## [0.1.0a2] - 2026-10-09
 
