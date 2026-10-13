@@ -12,7 +12,9 @@ All notable changes will be documented in this file. The format is based on
   `ScenarioResult.progress` collection.
 - Spark runner capture of callback-backed trigger identities after each batch
   barrier, including across restarts, with optional input-row, watermark, and
-  state-operator metrics. Progress assertions remain separate follow-up work.
+  state-operator metrics.
+- `assert_input_row_count` for an explicitly selected action and trigger, with
+  distinct failures for unavailable counts and mismatches.
 
 ## [0.1.0a2] - 2026-10-09
 

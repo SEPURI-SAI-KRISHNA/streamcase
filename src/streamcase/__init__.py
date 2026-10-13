@@ -1,5 +1,6 @@
 """Deterministic testing for Apache Spark Structured Streaming."""
 
+from streamcase._progress_assertions import assert_input_row_count
 from streamcase._version import __version__
 from streamcase.actions import Batch, Restart, batch, restart
 from streamcase.assertions import assert_batch_count, assert_rows_equal, assert_unique_keys
@@ -18,6 +19,7 @@ __all__ = [
     "ScenarioResult",
     "__version__",
     "assert_batch_count",
+    "assert_input_row_count",
     "assert_rows_equal",
     "assert_unique_keys",
     "batch",
