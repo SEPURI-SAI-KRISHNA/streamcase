@@ -8,6 +8,8 @@ from datetime import date
 from decimal import Decimal
 from types import MappingProxyType
 
+from streamcase.progress import CapturedProgress
+
 
 def _freeze_mapping(value: Mapping[object, object], path: str) -> Mapping[str, object]:
     frozen: dict[str, object] = {}
@@ -65,13 +67,19 @@ class CapturedBatch:
 
 @dataclass(frozen=True, slots=True, init=False)
 class ScenarioResult:
-    """An immutable ordered snapshot of captured output batches."""
+    """Immutable snapshots of captured output batches and optional progress."""
 
     batches: tuple[CapturedBatch, ...]
+    progress: tuple[CapturedProgress, ...]
     _rows: tuple[Mapping[str, object], ...] = field(repr=False, compare=False)
 
-    def __init__(self, batches: Iterable[CapturedBatch]) -> None:
-        """Snapshot captured batches and expose their rows in execution order."""
+    def __init__(
+        self,
+        batches: Iterable[CapturedBatch],
+        *,
+        progress: Iterable[CapturedProgress] = (),
+    ) -> None:
+        """Snapshot captured batches and progress in their observation order."""
         snapshot = tuple(batches)
         for index, captured_batch in enumerate(snapshot):
             if not isinstance(captured_batch, CapturedBatch):
@@ -81,8 +89,18 @@ class ScenarioResult:
                 )
                 raise TypeError(message)
 
+        progress_snapshot = tuple(progress)
+        for index, captured_progress in enumerate(progress_snapshot):
+            if not isinstance(captured_progress, CapturedProgress):
+                message = (
+                    f"Scenario result progress at index {index} must be a CapturedProgress; "
+                    f"got {type(captured_progress).__name__}."
+                )
+                raise TypeError(message)
+
         rows = tuple(row for captured_batch in snapshot for row in captured_batch.rows)
         object.__setattr__(self, "batches", snapshot)
+        object.__setattr__(self, "progress", progress_snapshot)
         object.__setattr__(self, "_rows", rows)
 
     @property
