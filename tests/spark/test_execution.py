@@ -51,6 +51,13 @@ def test_batch_actions_produce_distinct_spark_micro_batches(
 
         assert isinstance(result, ScenarioResult)
         assert [item.batch_id for item in result.batches] == [0, 1]
+        assert [
+            (item.action_index, item.trigger_index, item.batch_id) for item in result.progress
+        ] == [
+            (0, 0, 0),
+            (1, 0, 1),
+        ]
+        assert len({item.run_id for item in result.progress}) == 1
         assert_batch_count(result, 2)
         assert_rows_equal(result, [{"id": 1}, {"id": 2}])
         assert_unique_keys(result, "id")

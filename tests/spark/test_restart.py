@@ -114,6 +114,11 @@ def test_restart_reuses_checkpoint_with_a_new_query_execution(
     assert all(not item.query.isActive for item in observed)
     assert_batch_count(result, 2)
     assert [item.batch_id for item in result.batches] == [0, 1]
+    assert [(item.action_index, item.trigger_index, item.batch_id) for item in result.progress] == [
+        (0, 0, 0),
+        (2, 0, 1),
+    ]
+    assert [item.run_id for item in result.progress] == [item.run_id for item in observed]
     assert_rows_equal(result, [{"id": 1, "scaled": 10}, {"id": 2, "scaled": 20}])
     assert_unique_keys(result, "id")
 

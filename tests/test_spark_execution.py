@@ -56,6 +56,13 @@ class _FakeQuery:
         self.name: str | None = None
         self.callback: Any = None
         self.drop_output = False
+        self.runId = f"run-{id(self)}"
+        self.progress_reports: list[dict[str, object]] = []
+        self.omit_progress = False
+
+    @property
+    def recentProgress(self) -> list[dict[str, object]]:  # noqa: N802
+        return [] if self.omit_progress else list(self.progress_reports)
 
     def processAllAvailable(self) -> None:  # noqa: N802 - mirrors the PySpark API
         if self.process_error is not None:
@@ -74,6 +81,13 @@ class _FakeQuery:
                 ]
             )
             self.callback(cast(Any, _FakeDataFrame(rows)), len(self.processed) - 1)
+        self.progress_reports.append(
+            {
+                "runId": self.runId,
+                "batchId": len(self.processed) - 1,
+                "timestamp": f"2026-10-13T00:00:00.{len(self.progress_reports):03d}Z",
+            }
+        )
         if self.terminate_during_processing:
             self.isActive = False
 
@@ -171,6 +185,12 @@ def test_each_batch_is_published_then_processed_in_scenario_order(
     assert_batch_count(result, 2)
     assert_rows_equal(result, [{"id": 1}, {"id": 2}])
     assert_unique_keys(result, "id")
+    assert [(item.action_index, item.trigger_index, item.batch_id) for item in result.progress] == [
+        (0, 0, 0),
+        (1, 0, 1),
+    ]
+    assert {item.run_id for item in result.progress} == {query.runId}
+    assert all(item.num_input_rows is None for item in result.progress)
 
     capture.callback(cast(Any, _FakeDataFrame([_FakeRow({"id": 3})])), 2)
     assert_batch_count(result, 2)
@@ -242,6 +262,63 @@ def test_empty_output_callback_remains_a_distinct_result_batch(
     assert query.stop_calls == 1
 
 
+def test_missing_progress_report_does_not_create_a_snapshot(
+    run_directories: RunDirectories,
+) -> None:
+    query = _FakeQuery(run_directories)
+    query.omit_progress = True
+
+    result = _execute_batches(
+        cast(Any, _FakeStream(query)),
+        scenario(batch({"id": 1})),
+        run_directories,
+        _BatchCapture(),
+    )
+
+    assert_batch_count(result, 1)
+    assert result.progress == ()
+    assert query.stop_calls == 1
+
+
+def test_ambiguous_progress_report_fails_with_action_context_and_cleanup(
+    run_directories: RunDirectories,
+) -> None:
+    class _AmbiguousQuery(_FakeQuery):
+        def processAllAvailable(self) -> None:  # noqa: N802
+            super().processAllAvailable()
+            self.progress_reports.append({"runId": self.runId, "batchId": 0, "timestamp": "later"})
+
+    query = _AmbiguousQuery(run_directories)
+
+    with pytest.raises(
+        RuntimeError, match=r"Batch action at index 0 failed.*multiple progress reports"
+    ):
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(batch({"id": 1})),
+            run_directories,
+            _BatchCapture(),
+        )
+
+    assert query.stop_calls == 1
+
+
+def test_stale_progress_report_is_not_reused_for_a_new_callback(
+    run_directories: RunDirectories,
+) -> None:
+    query = _FakeQuery(run_directories)
+    query.progress_reports.append({"runId": query.runId, "batchId": 0, "timestamp": "old"})
+
+    result = _execute_batches(
+        cast(Any, _FakeStream(query)),
+        scenario(batch({"id": 1})),
+        run_directories,
+        _BatchCapture(),
+    )
+
+    assert [(item.action_index, item.batch_id) for item in result.progress] == [(0, 0)]
+
+
 def test_result_snapshot_is_taken_after_query_shutdown(
     run_directories: RunDirectories,
     monkeypatch: pytest.MonkeyPatch,
@@ -250,10 +327,13 @@ def test_result_snapshot_is_taken_after_query_shutdown(
     stream = _FakeStream(query)
     capture = _BatchCapture()
     original_snapshot = _BatchCapture.snapshot
+    snapshots_after_stop = 0
 
     def snapshot_after_stop(self: _BatchCapture) -> tuple[Any, ...]:
-        assert query.stop_calls == 1
-        assert not query.isActive
+        nonlocal snapshots_after_stop
+        if query.stop_calls == 1:
+            assert not query.isActive
+            snapshots_after_stop += 1
         return original_snapshot(self)
 
     monkeypatch.setattr(_BatchCapture, "snapshot", snapshot_after_stop)
@@ -266,6 +346,7 @@ def test_result_snapshot_is_taken_after_query_shutdown(
     )
 
     assert_batch_count(result, 1)
+    assert snapshots_after_stop == 1
 
 
 def test_restart_requires_rebuild_callback_before_query_start_or_publication(
@@ -330,6 +411,8 @@ def test_restart_rebuilds_stream_and_reuses_checkpoint_and_capture(
         }
         assert stream.writer.query_name == run_directories.root.name
     assert [captured.batch_id for captured in result.batches] == [0, 1]
+    assert [(item.action_index, item.batch_id) for item in result.progress] == [(0, 0), (2, 1)]
+    assert [item.run_id for item in result.progress] == [first_query.runId, replacement_query.runId]
     assert_rows_equal(result, [{"id": 1}, {"id": 2}])
 
 

@@ -12,7 +12,7 @@ from streamcase._spark_managed import _run_managed_batches
 
 
 def _fake_stream() -> tuple[Mock, Mock]:
-    query = Mock(isActive=True)
+    query = Mock(isActive=True, recentProgress=[], runId="fake-run")
     writer = Mock()
     writer.foreachBatch.return_value = writer
     writer.outputMode.return_value = writer
