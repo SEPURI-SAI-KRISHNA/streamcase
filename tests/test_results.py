@@ -7,7 +7,7 @@ from decimal import Decimal
 
 import pytest
 
-from streamcase import CapturedBatch, ScenarioResult
+from streamcase import CapturedBatch, CapturedProgress, ScenarioResult
 
 
 def test_captured_batch_recursively_snapshots_and_freezes_rows() -> None:
@@ -117,7 +117,29 @@ def test_scenario_result_allows_zero_batches() -> None:
     result = ScenarioResult([])
 
     assert result.batches == ()
+    assert result.progress == ()
     assert result.rows == ()
+
+
+def test_scenario_result_snapshots_optional_progress() -> None:
+    captured_progress = CapturedProgress(0, 0, 4, "run-1", num_input_rows=0)
+    progress = [captured_progress]
+
+    result = ScenarioResult([], progress=progress)
+    progress.clear()
+
+    assert result.progress == (captured_progress,)
+    assert result != ScenarioResult([])
+    with pytest.raises(FrozenInstanceError):
+        result.progress = ()  # type: ignore[misc]
+
+
+def test_scenario_result_rejects_unsupported_progress_with_index() -> None:
+    with pytest.raises(TypeError, match=r"progress at index 1.*got str"):
+        ScenarioResult(
+            [],
+            progress=[CapturedProgress(0, 0, 4, "run-1"), "progress"],  # type: ignore[list-item]
+        )
 
 
 def test_scenario_result_rejects_unsupported_batch_with_index() -> None:
