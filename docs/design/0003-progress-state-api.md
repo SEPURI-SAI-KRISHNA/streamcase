@@ -125,8 +125,12 @@ assert_input_row_count(result, 3, action_index=0, trigger_index=0)
 assert_watermark(result, expected_utc_time, action_index=0, trigger_index=0)
 assert_watermark(result, None, action_index=0, trigger_index=0)
 assert_state_metric(
-    result, "num_rows_total", 2,
-    action_index=0, trigger_index=0, operator_index=0,
+    result,
+    "num_rows_total",
+    2,
+    action_index=0,
+    trigger_index=0,
+    operator_index=0,
 )
 ```
 
