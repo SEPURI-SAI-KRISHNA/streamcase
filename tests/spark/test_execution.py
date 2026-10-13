@@ -58,6 +58,8 @@ def test_batch_actions_produce_distinct_spark_micro_batches(
             (1, 0, 1),
         ]
         assert len({item.run_id for item in result.progress}) == 1
+        assert [item.num_input_rows for item in result.progress] == [1, 1]
+        assert [item.state_operators for item in result.progress] == [(), ()]
         assert_batch_count(result, 2)
         assert_rows_equal(result, [{"id": 1}, {"id": 2}])
         assert_unique_keys(result, "id")
@@ -99,6 +101,8 @@ def test_complete_mode_captures_each_aggregate_snapshot(tmp_path: Path) -> None:
 
         assert_batch_count(result, 2)
         assert [captured.rows[0]["count"] for captured in result.batches] == [1, 2]
+        assert [item.num_input_rows for item in result.progress] == [1, 1]
+        assert all(item.state_operators for item in result.progress)
     finally:
         directories.cleanup()
         spark.stop()
