@@ -7,6 +7,7 @@ import pytest
 from streamcase import (
     ScenarioResult,
     assert_batch_count,
+    assert_input_row_count,
     assert_rows_equal,
     assert_unique_keys,
     batch,
@@ -60,6 +61,8 @@ def test_batch_actions_produce_distinct_spark_micro_batches(
         assert len({item.run_id for item in result.progress}) == 1
         assert [item.num_input_rows for item in result.progress] == [1, 1]
         assert [item.state_operators for item in result.progress] == [(), ()]
+        assert_input_row_count(result, 1, action_index=0, trigger_index=0)
+        assert_input_row_count(result, 1, action_index=1, trigger_index=0)
         assert_batch_count(result, 2)
         assert_rows_equal(result, [{"id": 1}, {"id": 2}])
         assert_unique_keys(result, "id")
