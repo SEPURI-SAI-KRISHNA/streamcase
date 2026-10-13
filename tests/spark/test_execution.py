@@ -9,6 +9,7 @@ from streamcase import (
     assert_batch_count,
     assert_input_row_count,
     assert_rows_equal,
+    assert_state_metric,
     assert_unique_keys,
     batch,
     scenario,
@@ -106,6 +107,9 @@ def test_complete_mode_captures_each_aggregate_snapshot(tmp_path: Path) -> None:
         assert [captured.rows[0]["count"] for captured in result.batches] == [1, 2]
         assert [item.num_input_rows for item in result.progress] == [1, 1]
         assert all(item.state_operators for item in result.progress)
+        assert_state_metric(
+            result, "num_rows_total", 1, action_index=0, trigger_index=0, operator_index=0
+        )
     finally:
         directories.cleanup()
         spark.stop()
