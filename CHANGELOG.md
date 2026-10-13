@@ -9,8 +9,10 @@ All notable changes will be documented in this file. The format is based on
 ### Added
 
 - Immutable core progress and state-operator snapshot models with an optional
-  `ScenarioResult.progress` collection. Spark capture and progress assertions
-  remain separate follow-up work.
+  `ScenarioResult.progress` collection.
+- Spark runner capture of callback-backed trigger identities after each batch
+  barrier, including across restarts. Optional metric normalization and progress
+  assertions remain separate follow-up work.
 
 ## [0.1.0a2] - 2026-10-09
 

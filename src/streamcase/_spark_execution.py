@@ -10,7 +10,9 @@ from streamcase._directories import RunDirectories
 from streamcase._input_files import AtomicBatchWriter
 from streamcase._spark_capture import _BatchCapture
 from streamcase._spark_lifecycle import _QueryLifecycle
+from streamcase._spark_progress import _capture_action_progress
 from streamcase.actions import Batch, Restart
+from streamcase.progress import CapturedProgress
 from streamcase.results import ScenarioResult
 from streamcase.scenario import Scenario
 
@@ -23,12 +25,22 @@ def _process_batch_action(
     action: Batch,
     input_writer: AtomicBatchWriter,
     lifecycle: _QueryLifecycle,
-) -> None:
+    capture: _BatchCapture,
+) -> tuple[CapturedProgress, ...]:
     try:
         query = lifecycle.require_active()
+        progress_before = tuple(query.recentProgress)
+        captured_before = len(capture.snapshot())
         input_writer.publish(action)
         query.processAllAvailable()
         lifecycle.require_active()
+        return _capture_action_progress(
+            index,
+            capture.snapshot()[captured_before:],
+            progress_before,
+            query.recentProgress,
+            str(query.runId),
+        )
     except Exception as error:
         raise RuntimeError(f"Batch action at index {index} failed: {error}") from error
 
@@ -86,10 +98,13 @@ def _execute_batches(
     with _cleanup_on_exit("streaming query", lifecycle.stop):
         lifecycle.start(stream, action_index=0)
         input_writer = AtomicBatchWriter(directories)
+        progress: list[CapturedProgress] = []
         for index, action in enumerate(scenario.actions):
             if isinstance(action, Batch):
-                _process_batch_action(index, action, input_writer, lifecycle)
+                progress.extend(
+                    _process_batch_action(index, action, input_writer, lifecycle, capture)
+                )
             else:
                 assert rebuild_stream is not None
                 _process_restart_action(index, rebuild_stream, lifecycle)
-    return ScenarioResult(capture.snapshot())
+    return ScenarioResult(capture.snapshot(), progress=progress)
