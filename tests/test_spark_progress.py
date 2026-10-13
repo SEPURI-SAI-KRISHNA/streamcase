@@ -86,7 +86,7 @@ def test_unique_positive_input_report_disambiguates_no_data_update() -> None:
     captured = _capture_action_progress(0, [CapturedBatch(0, [])], [], [data, idle], "run-1")
 
     assert [(item.action_index, item.batch_id) for item in captured] == [(0, 0)]
-    assert captured[0].num_input_rows is None
+    assert captured[0].num_input_rows == 2
 
 
 @pytest.mark.parametrize("counts", [(1, 2), (True, 0)])
