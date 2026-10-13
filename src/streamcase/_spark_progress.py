@@ -31,8 +31,10 @@ def _capture_action_progress(
 ) -> tuple[CapturedProgress, ...]:
     """Snapshot unambiguous new reports for this action's callback batches."""
     old_keys = {_report_key(report) for report in before}
-    new_keys = [
-        key for report in after if (key := _report_key(report)) not in old_keys and key[0] == run_id
+    new_reports = [
+        (key, report)
+        for report in after
+        if (key := _report_key(report)) not in old_keys and key[0] == run_id
     ]
     captured: list[CapturedProgress] = []
     seen_batch_ids: set[int] = set()
@@ -43,12 +45,24 @@ def _capture_action_progress(
                 f"{batch.batch_id}; progress matching is ambiguous."
             )
         seen_batch_ids.add(batch.batch_id)
-        matches = [key for key in new_keys if key[1] == batch.batch_id]
+        matches = [report for key, report in new_reports if key[1] == batch.batch_id]
         if len(matches) > 1:
-            raise RuntimeError(
-                f"Batch action at index {action_index} has multiple progress reports "
-                f"for callback batch ID {batch.batch_id}."
-            )
+            # Spark can publish a no-data update with the same batch ID. The
+            # scenario Batch has input rows, so a single positive-input report
+            # identifies its data trigger without assigning the idle update.
+            data_matches = [
+                report
+                for report in matches
+                if isinstance((count := report.get("numInputRows")), int)
+                and not isinstance(count, bool)
+                and count > 0
+            ]
+            if len(data_matches) != 1:
+                raise RuntimeError(
+                    f"Batch action at index {action_index} has multiple progress reports "
+                    f"for callback batch ID {batch.batch_id}."
+                )
+            matches = data_matches
         if matches:
             captured.append(
                 CapturedProgress(
