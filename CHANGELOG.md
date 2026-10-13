@@ -8,18 +8,17 @@ All notable changes will be documented in this file. The format is based on
 
 No changes yet.
 
-## [0.1.0a2] - Candidate (not published)
+## [0.1.0a2] - 2026-10-09
 
-This follow-up alpha is prepared but has no publication date. It corrects
+This follow-up alpha was published on PyPI on 2026-10-09. It corrects
 PyPI-facing documentation from `0.1.0a1` without changing runtime APIs or
-dependencies. See the [candidate release notes](docs/releases/0.1.0a2.md)
-for the tested support matrix and limitations. Publication and verification
-will be tracked in a separate release issue.
+dependencies. See the [release notes](docs/releases/0.1.0a2.md) for the tested
+support matrix and limitations. Issue #130 records publication and verification.
 
 ### Documentation
 
 - Replace pre-publication README installation instructions with PyPI guidance
-  that can be included in a future distribution's long description.
+  included in the published distribution's long description.
 - Record the first alpha's published status and clarify the tested Spark
   installation path.
 
