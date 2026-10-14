@@ -20,6 +20,11 @@ All notable changes will be documented in this file. The format is based on
 - `assert_state_metric` for a selected state-operator index and documented
   metric, with explicit failures for missing operators or metric values.
 
+### Changed
+
+- Progress assertion failures now share concise context, expected, and actual
+  lines while bounding free-form run and operator identifiers.
+
 ## [0.1.0a2] - 2026-10-09
 
 This follow-up alpha was published on PyPI on 2026-10-09. It corrects

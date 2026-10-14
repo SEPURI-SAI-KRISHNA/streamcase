@@ -6,6 +6,7 @@ from collections.abc import Mapping, Sequence
 from typing import TypeAlias, cast
 
 _MAX_DIAGNOSTIC_ITEMS = 5
+_MAX_PROGRESS_IDENTIFIER_CHARS = 80
 
 _Location: TypeAlias = tuple[int, int]
 _DuplicateKey: TypeAlias = tuple[
@@ -29,6 +30,27 @@ def _render_value(value: object) -> str:
         return f"({rendered_tuple_items}{trailing_comma})"
 
     return repr(value)
+
+
+def _bounded_progress_identifier(value: str) -> str:
+    """Render a free-form identifier on one bounded diagnostic line."""
+    rendered = repr(value)
+    if len(rendered) <= _MAX_PROGRESS_IDENTIFIER_CHARS:
+        return rendered
+    omitted = len(rendered) - _MAX_PROGRESS_IDENTIFIER_CHARS
+    return f"{rendered[:_MAX_PROGRESS_IDENTIFIER_CHARS]}... ({omitted} more chars omitted)"
+
+
+def _format_progress_failure(subject: str, context: str, expected: str, actual: str) -> str:
+    """Keep all progress assertion failures in the same readable order."""
+    return "\n".join(
+        (
+            f"Progress assertion failed: {subject}.",
+            f"Context: {context}.",
+            f"Expected: {expected}.",
+            f"Actual: {actual}.",
+        )
+    )
 
 
 def _format_item_section(title: str, items: Sequence[str]) -> list[str]:

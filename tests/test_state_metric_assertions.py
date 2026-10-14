@@ -83,10 +83,10 @@ def test_mismatch_reports_metric_expected_actual_and_operator_context() -> None:
         )
 
     message = str(error_info.value)
-    assert "State metric num_rows_total differs" in message
+    assert "Progress assertion failed: state metric num_rows_total." in message
     assert "action 2, trigger 0, Spark batch 7, run 'run-1'" in message
     assert "operator 0 ('stateStoreSave')" in message
-    assert "Expected: 4. Actual: 3." in message
+    assert "Expected: 4.\nActual: 3." in message
 
 
 def test_unreported_operator_collection_fails_distinctly_from_empty() -> None:
@@ -97,8 +97,8 @@ def test_unreported_operator_collection_fails_distinctly_from_empty() -> None:
             result, "num_rows_total", 0, action_index=2, trigger_index=0, operator_index=0
         )
 
-    assert "State operators unavailable" in str(error_info.value)
-    assert "Spark did not report them" in str(error_info.value)
+    assert "unavailable" in str(error_info.value)
+    assert "Spark did not report state operators" in str(error_info.value)
 
 
 def test_reported_empty_operator_collection_fails_as_out_of_range() -> None:
@@ -128,13 +128,14 @@ def test_missing_metric_fails_distinctly_from_zero_without_operator_name() -> No
         )
 
     message = str(error_info.value)
-    assert "State metric num_rows_total unavailable" in message
+    assert "Progress assertion failed: state metric num_rows_total." in message
+    assert "Actual: unavailable" in message
     assert "operator 0" in message
     assert "Actual: 0" not in message
 
 
 def test_missing_progress_report_fails_before_operator_selection() -> None:
-    with pytest.raises(AssertionError, match="No progress report was captured for action 2"):
+    with pytest.raises(AssertionError, match="No progress report was captured"):
         assert_state_metric(
             _result(), "num_rows_total", 0, action_index=2, trigger_index=0, operator_index=0
         )
@@ -143,7 +144,7 @@ def test_missing_progress_report_fails_before_operator_selection() -> None:
 def test_duplicate_progress_identity_is_rejected() -> None:
     result = _result(CapturedProgress(2, 0, 7, "run-1"), CapturedProgress(2, 0, 8, "run-2"))
 
-    with pytest.raises(AssertionError, match="Multiple progress reports match action 2"):
+    with pytest.raises(AssertionError, match="Multiple progress reports match"):
         assert_state_metric(
             result, "num_rows_total", 0, action_index=2, trigger_index=0, operator_index=0
         )

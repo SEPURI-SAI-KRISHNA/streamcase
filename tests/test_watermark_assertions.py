@@ -32,9 +32,9 @@ def test_expected_none_does_not_match_observed_epoch_watermark() -> None:
         assert_watermark(result, None, action_index=2, trigger_index=0)
 
     message = str(error_info.value)
-    assert "Watermark differs" in message
+    assert "Progress assertion failed: watermark." in message
     assert "action 2, trigger 0, Spark batch 7, run 'run-1'" in message
-    assert "Expected: None. Actual: 1970-01-01T00:00:00+00:00." in message
+    assert "Expected: None.\nActual: 1970-01-01T00:00:00+00:00." in message
 
 
 def test_expected_watermark_does_not_match_missing_observation() -> None:
@@ -44,7 +44,7 @@ def test_expected_watermark_does_not_match_missing_observation() -> None:
     with pytest.raises(AssertionError) as error_info:
         assert_watermark(result, expected, action_index=2, trigger_index=0)
 
-    assert "Expected: 2026-10-13T00:00:00+00:00. Actual: None." in str(error_info.value)
+    assert "Expected: 2026-10-13T00:00:00+00:00.\nActual: None." in str(error_info.value)
 
 
 def test_different_observed_and_expected_watermarks_fail() -> None:
@@ -61,7 +61,7 @@ def test_different_observed_and_expected_watermarks_fail() -> None:
 
 
 def test_expected_none_still_requires_selected_progress_report() -> None:
-    with pytest.raises(AssertionError, match="No progress report was captured for action 2"):
+    with pytest.raises(AssertionError, match="No progress report was captured"):
         assert_watermark(_result(), None, action_index=2, trigger_index=0)
 
 
@@ -71,7 +71,7 @@ def test_duplicate_progress_identity_is_rejected() -> None:
         CapturedProgress(2, 0, 8, "run-2"),
     )
 
-    with pytest.raises(AssertionError, match="Multiple progress reports match action 2"):
+    with pytest.raises(AssertionError, match="Multiple progress reports match"):
         assert_watermark(result, None, action_index=2, trigger_index=0)
 
 

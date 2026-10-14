@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from streamcase._diagnostics import _bounded_progress_identifier, _format_progress_failure
 from streamcase.progress import CapturedProgress
 from streamcase.results import ScenarioResult
 
@@ -30,12 +31,16 @@ def _select_progress(
     result: ScenarioResult,
     action_index: int,
     trigger_index: int,
+    operator_index: int | None = None,
 ) -> CapturedProgress:
     """Select exactly one snapshot by its logical action and trigger indexes."""
     if not isinstance(result, ScenarioResult):
         raise TypeError(f"result must be a ScenarioResult; got {type(result).__name__}.")
     action_index = _non_negative_index(action_index, "action_index")
     trigger_index = _non_negative_index(trigger_index, "trigger_index")
+    context = f"action {action_index}, trigger {trigger_index}"
+    if operator_index is not None:
+        context += f", operator {operator_index}"
     matches = [
         progress
         for progress in result.progress
@@ -43,20 +48,39 @@ def _select_progress(
     ]
     if not matches:
         raise AssertionError(
-            f"No progress report was captured for action {action_index}, trigger {trigger_index}."
+            _format_progress_failure(
+                "progress report selection",
+                context,
+                "exactly one progress report",
+                "No progress report was captured",
+            )
         )
     if len(matches) > 1:
         raise AssertionError(
-            f"Multiple progress reports match action {action_index}, trigger {trigger_index}."
+            _format_progress_failure(
+                "progress report selection",
+                context,
+                "exactly one progress report",
+                f"Multiple progress reports match ({len(matches)} matched)",
+            )
         )
     return matches[0]
 
 
-def _progress_context(progress: CapturedProgress) -> str:
-    return (
+def _progress_context(
+    progress: CapturedProgress,
+    operator_index: int | None = None,
+    operator_name: str | None = None,
+) -> str:
+    context = (
         f"action {progress.action_index}, trigger {progress.trigger_index}, "
-        f"Spark batch {progress.batch_id}, run {progress.run_id!r}"
+        f"Spark batch {progress.batch_id}, run {_bounded_progress_identifier(progress.run_id)}"
     )
+    if operator_index is not None:
+        context += f", operator {operator_index}"
+        if operator_name is not None:
+            context += f" ({_bounded_progress_identifier(operator_name)})"
+    return context
 
 
 def assert_input_row_count(
@@ -75,11 +99,19 @@ def assert_input_row_count(
     progress = _select_progress(result, action_index, trigger_index)
     context = _progress_context(progress)
     if progress.num_input_rows is None:
-        raise AssertionError(f"Input-row count unavailable for {context}: Spark did not report it.")
+        raise AssertionError(
+            _format_progress_failure(
+                "input-row count",
+                context,
+                str(expected_count),
+                "unavailable (Spark did not report numInputRows)",
+            )
+        )
     if progress.num_input_rows != expected_count:
         raise AssertionError(
-            f"Input-row count differs for {context}. "
-            f"Expected: {expected_count}. Actual: {progress.num_input_rows}."
+            _format_progress_failure(
+                "input-row count", context, str(expected_count), str(progress.num_input_rows)
+            )
         )
 
 
@@ -103,8 +135,9 @@ def assert_watermark(
         expected_text = "None" if expected is None else expected.isoformat()
         actual_text = "None" if progress.watermark is None else progress.watermark.isoformat()
         raise AssertionError(
-            f"Watermark differs for {_progress_context(progress)}. "
-            f"Expected: {expected_text}. Actual: {actual_text}."
+            _format_progress_failure(
+                "watermark", _progress_context(progress), expected_text, actual_text
+            )
         )
 
 
@@ -129,22 +162,33 @@ def assert_state_metric(
         raise ValueError("expected must be non-negative.")
     operator_index = _non_negative_index(operator_index, "operator_index")
 
-    progress = _select_progress(result, action_index, trigger_index)
-    context = f"{_progress_context(progress)}, operator {operator_index}"
+    progress = _select_progress(result, action_index, trigger_index, operator_index)
+    context = _progress_context(progress, operator_index)
     operators = progress.state_operators
     if operators is None:
         raise AssertionError(
-            f"State operators unavailable for {context}: Spark did not report them."
+            _format_progress_failure(
+                f"state metric {metric}",
+                context,
+                str(expected),
+                "unavailable (Spark did not report state operators)",
+            )
         )
     if operator_index >= len(operators):
+        unavailable = (
+            f"operator index {operator_index} out of range ({len(operators)} operator(s) reported)"
+        )
         raise AssertionError(
-            f"State operator {operator_index} unavailable for {_progress_context(progress)}: "
-            f"{len(operators)} operator(s) reported."
+            _format_progress_failure(
+                f"state metric {metric}",
+                context,
+                str(expected),
+                unavailable,
+            )
         )
 
     operator = operators[operator_index]
-    if operator.operator_name is not None:
-        context += f" ({operator.operator_name!r})"
+    context = _progress_context(progress, operator_index, operator.operator_name)
     values = {
         "num_rows_total": operator.num_rows_total,
         "num_rows_updated": operator.num_rows_updated,
@@ -155,9 +199,14 @@ def assert_state_metric(
     actual = values[metric]
     if actual is None:
         raise AssertionError(
-            f"State metric {metric} unavailable for {context}: Spark did not report it."
+            _format_progress_failure(
+                f"state metric {metric}",
+                context,
+                str(expected),
+                f"unavailable (Spark did not report {metric})",
+            )
         )
     if actual != expected:
         raise AssertionError(
-            f"State metric {metric} differs for {context}. Expected: {expected}. Actual: {actual}."
+            _format_progress_failure(f"state metric {metric}", context, str(expected), str(actual))
         )
