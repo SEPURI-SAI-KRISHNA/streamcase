@@ -9,7 +9,14 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from streamcase import assert_batch_count, assert_rows_equal, assert_unique_keys, batch, restart
+from streamcase import (
+    assert_batch_count,
+    assert_input_row_count,
+    assert_rows_equal,
+    assert_unique_keys,
+    batch,
+    restart,
+)
 from streamcase import scenario as make_scenario
 from streamcase._spark_lifecycle import _QueryLifecycle
 
@@ -119,6 +126,12 @@ def test_restart_reuses_checkpoint_with_a_new_query_execution(
         (2, 0, 1),
     ]
     assert [item.run_id for item in result.progress] == [item.run_id for item in observed]
+    assert_input_row_count(result, 1, action_index=0, trigger_index=0)
+    assert_input_row_count(result, 1, action_index=2, trigger_index=0)
+    with pytest.raises(AssertionError) as restart_error:
+        assert_input_row_count(result, 0, action_index=1, trigger_index=0)
+    assert "Context: action 1, trigger 0." in str(restart_error.value)
+    assert "No progress report was captured" in str(restart_error.value)
     assert_rows_equal(result, [{"id": 1, "scaled": 10}, {"id": 2, "scaled": 20}])
     assert_unique_keys(result, "id")
 
