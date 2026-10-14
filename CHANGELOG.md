@@ -25,6 +25,12 @@ All notable changes will be documented in this file. The format is based on
 - Progress assertion failures now share concise context, expected, and actual
   lines while bounding free-form run and operator identifiers.
 
+### Tests
+
+- Spark integration coverage for input-row assertions, fixed-event-time
+  watermark and state observations, absent stateless metrics, and restart
+  boundaries without timing sleeps.
+
 ## [0.1.0a2] - 2026-10-09
 
 This follow-up alpha was published on PyPI on 2026-10-09. It corrects
