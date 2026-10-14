@@ -150,8 +150,10 @@ operator collection, out-of-range operator, and unavailable metric fail
 distinctly from a numeric mismatch. Operator indexes are local to one report;
 tests must not assume an index or name stays stable after a plan change or
 restart. All failures show the selected action, trigger, Spark batch, run, and
-operator context where available. Issue #107 standardizes wording and bounds
-payload size.
+operator context where available. Progress assertion failures use four ordered
+lines: failure subject, context, expected value, and actual or unavailable
+value. Free-form run IDs and operator names are truncated in diagnostics; raw
+progress reports are never dumped.
 
 ## Version policy
 

@@ -30,11 +30,11 @@ def test_input_row_count_mismatch_reports_selected_batch_and_values() -> None:
         assert_input_row_count(result, 4, action_index=2, trigger_index=1)
 
     message = str(error_info.value)
-    assert "Input-row count differs" in message
+    assert "Progress assertion failed: input-row count." in message
     assert "action 2, trigger 1" in message
     assert "Spark batch 8" in message
     assert "run 'run-2'" in message
-    assert "Expected: 4. Actual: 3." in message
+    assert "Expected: 4.\nActual: 3." in message
 
 
 def test_missing_input_count_fails_distinctly_from_reported_zero() -> None:
@@ -69,7 +69,7 @@ def test_duplicate_progress_identity_is_ambiguous() -> None:
         CapturedProgress(2, 0, 8, "run-2", num_input_rows=1),
     )
 
-    with pytest.raises(AssertionError, match="Multiple progress reports match action 2, trigger 0"):
+    with pytest.raises(AssertionError, match="Multiple progress reports match"):
         assert_input_row_count(result, 1, action_index=2, trigger_index=0)
 
 
