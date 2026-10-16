@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from importlib.metadata import metadata, version
+from importlib.metadata import distribution, metadata, version
 from subprocess import run
 from sys import executable
 
@@ -31,6 +31,15 @@ def test_spark_extras_declare_distinct_supported_pyspark_lines() -> None:
         "spark": "pyspark<4.3,>=4.2",
         "spark35": "pyspark<3.6,>=3.5.9",
     }
+
+
+def test_pytest_extra_is_explicitly_opt_in() -> None:
+    package_metadata = metadata("streamcase")
+    requirements = package_metadata.get_all("Requires-Dist") or []
+
+    assert "pytest" in (package_metadata.get_all("Provides-Extra") or [])
+    assert "pytest<10,>=8.3; extra == 'pytest'" in requirements
+    assert not any(entry.group == "pytest11" for entry in distribution("streamcase").entry_points)
 
 
 def test_core_import_does_not_import_pyspark() -> None:

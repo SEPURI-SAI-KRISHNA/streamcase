@@ -8,6 +8,9 @@ All notable changes will be documented in this file. The format is based on
 
 ### Added
 
+- An explicitly loaded `streamcase.pytest_plugin` fixture and separate `pytest`
+  extra for running scenarios beneath each test's temporary directory without
+  taking ownership of the caller's Spark session.
 - A separate `spark35` extra for PySpark 3.5.9 or later 3.5 patches, with a
   dedicated Python 3.11 / Java 17 Spark integration CI matrix job.
 - Immutable core progress and state-operator snapshot models with an optional
