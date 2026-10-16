@@ -13,7 +13,8 @@ except ModuleNotFoundError as error:
     if (error.name or "").partition(".")[0] != "pyspark":
         raise
     raise ImportError(
-        'PySpark is required for streamcase.spark; install "streamcase[spark]".'
+        'PySpark is required for streamcase.spark; install "streamcase[spark]" '
+        'for Spark 4.2 or "streamcase[spark35]" for Spark 3.5.'
     ) from error
 
 from streamcase._directories import RunDirectories

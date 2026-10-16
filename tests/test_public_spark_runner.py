@@ -56,7 +56,7 @@ def test_missing_pyspark_explains_the_installation_extra(monkeypatch: pytest.Mon
     monkeypatch.setitem(sys.modules, "pyspark", None)
     monkeypatch.delitem(sys.modules, "streamcase.spark", raising=False)
 
-    with pytest.raises(ImportError, match=r"streamcase\[spark\]"):
+    with pytest.raises(ImportError, match=r"streamcase\[spark\].*streamcase\[spark35\]"):
         importlib.import_module("streamcase.spark")
 
 

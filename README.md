@@ -43,7 +43,14 @@ compatible Java JDK separately:
 python -m pip install --pre "streamcase[spark]"
 ```
 
-The Spark extra keeps PySpark out of the core dependency set. See the
+For Spark 3.5.9 or later 3.5 patches, the current source also provides a
+separate `spark35` extra. It is not in the published `0.1.0a2` release yet:
+
+```shell
+python -m pip install -e ".[spark35]"
+```
+
+These extras keep PySpark out of the core dependency set. See the
 [Spark compatibility policy](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/spark-compatibility.md) for the supported
 Python, Java, and Spark combination. Contributors working from a checkout can
 use the [editable-install instructions](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/CONTRIBUTING.md#development-setup).

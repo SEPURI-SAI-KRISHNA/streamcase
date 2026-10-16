@@ -1,17 +1,19 @@
 # Spark runner contract
 
-The public scenario runner lives in `streamcase.spark`. Install the Spark extra
+The public scenario runner lives in `streamcase.spark`. Install a supported Spark extra
 and provide a Java 17 runtime before using it; see the
 [compatibility policy](spark-compatibility.md). Importing the core `streamcase`
-package does not require PySpark. Importing `streamcase.spark` without the extra
+package does not require PySpark. Importing `streamcase.spark` without an extra
 raises an installation hint.
 
 ## Quick start
 
-From a checkout, use Python 3.10-3.13, a Java 17 JDK on `PATH` or in
-`JAVA_HOME`, and the supported PySpark 4.2 line. Install the optional dependency
-with `python -m pip install -e ".[spark]"`. The example runs in Spark local
-mode; no cluster or timing sleeps are needed.
+From a checkout, use Python 3.11 and a Java 17 JDK on `PATH` or in
+`JAVA_HOME`. Install either `python -m pip install -e ".[spark]"` for PySpark
+4.2 or `python -m pip install -e ".[spark35]"` for PySpark 3.5.9 or later 3.5
+patches. The latter extra is available in current source, not the published
+`0.1.0a2` release. The example runs in Spark local mode; no cluster or timing
+sleeps are needed.
 
 ```python
 from pyspark.sql import DataFrame, SparkSession
