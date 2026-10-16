@@ -57,6 +57,8 @@ defines immutable captured batches, scenario results, duplicate-aware unordered
 row comparison, batch-count assertions, and unique-key assertions. The
 [results and assertions guide](results-and-assertions.md) documents the
 implemented contract, which does not import PySpark.
+The separate [progress and state assertion guide](progress-and-state-assertions.md)
+documents immutable trigger snapshots and their backend-independent assertions.
 
 ## Compatibility
 

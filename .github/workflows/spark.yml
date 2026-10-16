@@ -5,6 +5,8 @@ on:
     paths:
       - ".github/workflows/spark.yml"
       - "docs/spark-compatibility.md"
+      - "docs/progress-and-state-assertions.md"
+      - "docs/restart-scenarios.md"
       - "pyproject.toml"
       - "src/**"
       - "scripts/smoke_installed.py"
@@ -15,6 +17,8 @@ on:
     paths:
       - ".github/workflows/spark.yml"
       - "docs/spark-compatibility.md"
+      - "docs/progress-and-state-assertions.md"
+      - "docs/restart-scenarios.md"
       - "pyproject.toml"
       - "src/**"
       - "scripts/smoke_installed.py"

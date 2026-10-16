@@ -82,4 +82,6 @@ and preserves the generated child for inspection. The caller's base directory
 is never removed.
 
 The return value is an immutable `ScenarioResult` with no live Spark objects.
-Use the [result assertions](results-and-assertions.md) to inspect it.
+Use the [result assertions](results-and-assertions.md) for output and the
+[progress guide](progress-and-state-assertions.md) for input-row, watermark,
+and state-operator observations.

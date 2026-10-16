@@ -53,6 +53,11 @@ replacement with the same checkpoint, query settings, and output capture.
 Later batches continue with new input-file names; Streamcase does not republish
 earlier `Batch` actions. The result retains captured output from both sides of
 the boundary.
+Progress assertions use scenario action indexes: in the example above, the
+two batches are actions `0` and `2`, while action `1` is the restart and has no
+progress report. Query `run_id` changes across the boundary even though Spark
+batch IDs continue. See the [progress guide](progress-and-state-assertions.md)
+for selection and missing-value semantics.
 
 Spark's [query `id`](https://spark.apache.org/docs/latest/api/python/reference/pyspark.ss/api/pyspark.sql.streaming.StreamingQuery.id.html)
 persists across a checkpoint restart, while its
