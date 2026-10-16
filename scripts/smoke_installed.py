@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import importlib.metadata
 import importlib.util
+import os
 import sys
 from pathlib import Path
 
@@ -61,8 +62,11 @@ def check_spark() -> None:
 
     from streamcase.spark import run_scenario
 
-    if not pyspark.__version__.startswith("4.2."):
-        raise AssertionError(f"Expected PySpark 4.2.x, found {pyspark.__version__}")
+    expected_minor = os.environ.get("STREAMCASE_TEST_SPARK_MINOR", "4.2")
+    if expected_minor not in {"3.5", "4.2"}:
+        raise AssertionError(f"Unexpected Spark test minor: {expected_minor!r}")
+    if not pyspark.__version__.startswith(f"{expected_minor}."):
+        raise AssertionError(f"Expected PySpark {expected_minor}.x, found {pyspark.__version__}")
 
     def transform(source: DataFrame) -> DataFrame:
         return source.filter("category = 'keep'").selectExpr("id")

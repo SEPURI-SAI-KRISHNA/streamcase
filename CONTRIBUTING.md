@@ -61,6 +61,10 @@ pytest -m spark -v
 
 The separate Spark CI workflow runs the same marked tests in local mode. Keep
 ordinary unit tests backend-independent so the core Python matrix remains fast.
+It tests both the `spark` (4.2) and `spark35` (3.5.9+) extras on Python 3.11 and
+Java 17. To run the 3.5 suite locally, install `.[dev,spark35]` instead and set
+`STREAMCASE_TEST_SPARK_MINOR=3.5` before running the Spark-marked tests. Do not
+install both extras in one environment.
 
 ## Pull requests
 

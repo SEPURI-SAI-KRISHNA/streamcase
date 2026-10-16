@@ -4,8 +4,9 @@ Use `Restart` to test that a Structured Streaming pipeline continues after its
 query is stopped and started with the same checkpoint. Streamcase runs this
 sequence against Spark; it does not simulate a restart or edit checkpoint data.
 
-This guide uses the [supported Python, Java, and PySpark combination](spark-compatibility.md).
-From a checkout, install the Spark extra with `python -m pip install -e ".[spark]"`.
+This guide uses a [supported Python, Java, and PySpark combination](spark-compatibility.md).
+From a checkout, install `.[spark]` for Spark 4.2 or `.[spark35]` for Spark
+3.5.9+; do not install both extras together.
 
 ## Minimal example
 

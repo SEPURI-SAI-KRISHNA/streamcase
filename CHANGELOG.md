@@ -8,6 +8,8 @@ All notable changes will be documented in this file. The format is based on
 
 ### Added
 
+- A separate `spark35` extra for PySpark 3.5.9 or later 3.5 patches, with a
+  dedicated Python 3.11 / Java 17 Spark integration CI matrix job.
 - Immutable core progress and state-operator snapshot models with an optional
   `ScenarioResult.progress` collection.
 - Spark runner capture of callback-backed trigger identities after each batch
@@ -27,6 +29,8 @@ All notable changes will be documented in this file. The format is based on
 
 ### Tests
 
+- Clean wheel and sdist smoke checks and the complete Spark integration suite
+  now run on both supported Spark dependency lines.
 - Spark integration coverage for input-row assertions, fixed-event-time
   watermark and state observations, absent stateless metrics, and restart
   boundaries without timing sleeps.
@@ -35,6 +39,8 @@ All notable changes will be documented in this file. The format is based on
 
 ### Documentation
 
+- Record the passing Spark 3.5 assessment, its narrow support decision, and
+  separate install instructions for the source-only `spark35` extra.
 - Add a runnable guide for progress snapshots and input-row, watermark, and
   state assertions; clarify source-versus-published availability and update
   related result, runner, and restart guides.

@@ -6,9 +6,9 @@ and assertions can also be used without PySpark. This guide describes the
 current source on `main`; the published `0.1.0a2` prerelease predates these
 progress APIs. Use an editable checkout to try them until a later release.
 
-For the Spark runner, use the [tested Python 3.11, Java 17, and PySpark 4.2.x
-combination](spark-compatibility.md). Progress assertions import no PySpark;
-only `streamcase.spark` needs the optional `spark` extra.
+For the Spark runner, use one of the [tested Python 3.11 and Java 17 Spark
+combinations](spark-compatibility.md). Progress assertions import no PySpark;
+only `streamcase.spark` needs the optional `spark` or `spark35` extra.
 
 ## Core-only example
 
@@ -69,7 +69,8 @@ or `ValueError`. The three assertions require `action_index` and
 
 ## Spark example (fixed event time)
 
-Install the checkout with `python -m pip install -e ".[spark]"` and provide a
+Install the checkout with `python -m pip install -e ".[spark]"` for Spark 4.2
+or `python -m pip install -e ".[spark35]"` for Spark 3.5.9+, and provide a
 Java 17 JDK. This example uses fixed event-time input and Spark's
 `processAllAvailable()` barrier, not sleeps or a wall-clock deadline.
 
