@@ -4,9 +4,9 @@ Streamcase provides immutable, backend-independent result objects and
 pytest-friendly assertion functions. They can be constructed and tested without
 PySpark, Java, a checkpoint, or a running streaming query.
 
-The future Spark runner will return the same public `ScenarioResult` model after
-capturing query output. Until that runner exists, the API is directly useful for
-unit tests, assertion exploration, and integration development.
+The Spark runner returns the same public `ScenarioResult` model after capturing
+query output and optional progress. The core models and assertions remain
+useful for unit tests without a Spark installation.
 
 ## Quick start
 
@@ -74,14 +74,18 @@ the captured batch.
 
 ### ScenarioResult
 
-`ScenarioResult(batches)` snapshots captured batches in execution order and
-may be empty. It exposes:
+`ScenarioResult(batches, progress=())` snapshots captured batches and progress
+in execution order and may be empty. It exposes:
 
 - `result.batches`: captured batches in execution order;
 - `result.rows`: all captured rows flattened in batch and row order.
+- `result.progress`: immutable, callback-backed progress snapshots in
+  observation order, independent of output batches.
 
-Batch identifiers do not need to be consecutive. The future runner owns their
-relationship to backend epoch identifiers, including across restarts.
+Batch identifiers do not need to be consecutive. The runner owns their
+relationship to Spark micro-batch identifiers, including across restarts.
+For input-row, watermark, and state-operator assertions, see the
+[progress guide](progress-and-state-assertions.md).
 
 Both models are frozen, use stable value equality, and contain no Spark or JVM
 objects.
@@ -175,14 +179,15 @@ stable; whitespace and presentation details may evolve.
 
 ## Boundaries
 
-The Phase 2 API intentionally excludes:
+The original Phase 2 row and batch assertions intentionally exclude:
 
 - Spark DataFrames and Spark Row objects as assertion inputs;
 - schema comparison and approximate numeric equality;
 - batch-scoped assertion overloads;
-- progress, watermark, and state-store assertions;
 - custom result-value normalizers.
 
-Those capabilities require separate issue-linked design work. The accepted
-[result and assertion API decision](design/0001-result-assertion-api.md) records
+Progress, watermark, and state-operator assertions are now separate public
+functions documented in the [progress guide](progress-and-state-assertions.md).
+Other excluded capabilities require separate issue-linked design work. The
+accepted [result and assertion API decision](design/0001-result-assertion-api.md) records
 the rationale and alternatives for the current contract.

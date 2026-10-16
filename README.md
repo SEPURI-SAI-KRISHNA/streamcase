@@ -11,6 +11,10 @@ Structured Streaming tests.
 > assertions are implemented. The API is experimental and may change in later
 > alphas; the [first-alpha scope](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/ROADMAP.md#first-alpha-release-010a1)
 > is narrower than the longer-term roadmap.
+>
+> Progress and state assertions are available in the current source on `main`,
+> but not in the published `0.1.0a2` prerelease. Use an editable checkout for
+> those APIs until a later release.
 
 The [first-alpha release notes](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/releases/0.1.0a1.md)
 describe the tested support matrix and limitations. Check
@@ -48,16 +52,17 @@ use the [editable-install instructions](https://github.com/SEPURI-SAI-KRISHNA/st
 
 Streamcase can describe immutable logical input batches and checkpoint-preserving
 restart boundaries, represent captured output, and assert row equality, batch
-counts, and unique keys without importing PySpark. The public Spark runner
-executes batches and restarts against a caller-owned session. See the
+counts, unique keys, and captured progress metrics without importing PySpark.
+The public Spark runner executes batches and restarts against a caller-owned
+session. See the
 [scenario model guide](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/scenario-model.md) and
 [results and assertions guide](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/results-and-assertions.md), plus the
+[progress and state assertions guide](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/progress-and-state-assertions.md),
 [two-batch Spark quick start and runner contract](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/spark-runner.md) and
 [checkpoint restart example](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/restart-scenarios.md).
 
 ## Planned capabilities
 
-- progress, watermark, and state-store assertions;
 - pytest fixtures;
 - compatibility testing across supported Spark releases.
 

@@ -30,6 +30,14 @@ All notable changes will be documented in this file. The format is based on
 - Spark integration coverage for input-row assertions, fixed-event-time
   watermark and state observations, absent stateless metrics, and restart
   boundaries without timing sleeps.
+- Execute the progress guide's core example in the unit suite and its Spark
+  example in the Spark lane; run that lane when the guide changes.
+
+### Documentation
+
+- Add a runnable guide for progress snapshots and input-row, watermark, and
+  state assertions; clarify source-versus-published availability and update
+  related result, runner, and restart guides.
 
 ## [0.1.0a2] - 2026-10-09
 
