@@ -27,6 +27,27 @@ def test_plugin_import_does_not_load_pyspark_or_change_core_imports() -> None:
     assert completed.returncode == 0, completed.stderr
 
 
+def test_explicit_plugin_load_allows_core_only_collection() -> None:
+    completed = run(
+        [
+            executable,
+            "-m",
+            "pytest",
+            "-p",
+            "streamcase.pytest_plugin",
+            "--collect-only",
+            "-q",
+            "tests/test_actions.py",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    assert "test_actions.py::" in completed.stdout
+
+
 def test_fixture_forwards_public_runner_arguments(
     streamcase_runner: Callable[..., ScenarioResult],
     tmp_path: Path,
