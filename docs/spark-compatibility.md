@@ -29,6 +29,10 @@ is verified in CI. Other Python versions with Spark, Java 21 and 25, other Spark
 4.x minors, and Spark 3.x may work but are not supported until dedicated
 compatibility issues add them to the matrix.
 
+The one-combination [Spark 3.5 assessment](spark35-assessment.md) tracks issue
+#110. Its experimental result does not change the supported matrix or the
+published `spark` extra.
+
 The upstream requirements are documented in the
 [Spark 4.2 overview](https://spark.apache.org/docs/4.2.0/index.html) and
 [PySpark installation guide](https://spark.apache.org/docs/4.2.0/api/python/getting_started/install.html).
