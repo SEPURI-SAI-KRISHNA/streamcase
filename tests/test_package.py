@@ -11,17 +11,26 @@ def test_package_exposes_version() -> None:
     assert streamcase.__version__ == version("streamcase")
 
 
-def test_spark_extra_declares_the_supported_pyspark_line() -> None:
+def test_spark_extras_declare_distinct_supported_pyspark_lines() -> None:
     requirements = metadata("streamcase").get_all("Requires-Dist") or []
     pyspark_requirements = [
         requirement for requirement in requirements if requirement.lower().startswith("pyspark")
     ]
 
-    assert len(pyspark_requirements) == 1
-    dependency, separator, marker = pyspark_requirements[0].partition(";")
-    assert dependency.strip() == "pyspark<4.3,>=4.2"
-    assert separator == ";"
-    assert marker.strip() in {"extra == 'spark'", 'extra == "spark"'}
+    assert len(pyspark_requirements) == 2
+    requirements_by_extra: dict[str, str] = {}
+    for requirement in pyspark_requirements:
+        dependency, separator, marker = requirement.partition(";")
+        assert separator == ";"
+        normalized_marker = marker.strip().replace('"', "'")
+        assert normalized_marker in {"extra == 'spark'", "extra == 'spark35'"}
+        extra = normalized_marker.removeprefix("extra == '").removesuffix("'")
+        requirements_by_extra[extra] = dependency.strip()
+
+    assert requirements_by_extra == {
+        "spark": "pyspark<4.3,>=4.2",
+        "spark35": "pyspark<3.6,>=3.5.9",
+    }
 
 
 def test_core_import_does_not_import_pyspark() -> None:
