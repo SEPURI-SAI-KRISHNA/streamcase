@@ -32,6 +32,8 @@ All notable changes will be documented in this file. The format is based on
 
 ### Tests
 
+- Execute the pytest guide's copyable files in the Spark 3.5/4.2 integration
+  matrix and check their syntax in the core-only suite.
 - Clean wheel and sdist smoke checks and the complete Spark integration suite
   now run on both supported Spark dependency lines.
 - Spark integration coverage for input-row assertions, fixed-event-time
@@ -42,6 +44,8 @@ All notable changes will be documented in this file. The format is based on
 
 ### Documentation
 
+- Add a runnable opt-in pytest integration guide covering source-only
+  installation, explicit activation, caller-owned sessions, and cleanup.
 - Record the passing Spark 3.5 assessment, its narrow support decision, and
   separate install instructions for the source-only `spark35` extra.
 - Add a runnable guide for progress snapshots and input-row, watermark, and

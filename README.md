@@ -12,9 +12,10 @@ Structured Streaming tests.
 > alphas; the [first-alpha scope](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/ROADMAP.md#first-alpha-release-010a1)
 > is narrower than the longer-term roadmap.
 >
-> Progress and state assertions are available in the current source on `main`,
-> but not in the published `0.1.0a2` prerelease. Use an editable checkout for
-> those APIs until a later release.
+> Progress and state assertions, Spark 3.5 support, and the opt-in pytest
+> fixture are available in the current source on `main`, but not in the
+> published `0.1.0a2` prerelease. Use an editable checkout until a later
+> release includes them.
 
 The [first-alpha release notes](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/releases/0.1.0a1.md)
 describe the tested support matrix and limitations. Check
@@ -50,6 +51,17 @@ separate `spark35` extra. It is not in the published `0.1.0a2` release yet:
 python -m pip install -e ".[spark35]"
 ```
 
+For the current source's opt-in pytest fixture, combine the `pytest` extra
+with exactly one Spark extra, such as:
+
+```shell
+python -m pip install -e ".[pytest,spark]"
+```
+
+See the [pytest integration guide](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/pytest-integration.md)
+for explicit activation, a runnable example, and session ownership. The
+published `0.1.0a2` package does not include this extra or fixture.
+
 These extras keep PySpark out of the core dependency set. See the
 [Spark compatibility policy](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/spark-compatibility.md) for the supported
 Python, Java, and Spark combination. Contributors working from a checkout can
@@ -61,20 +73,14 @@ Streamcase can describe immutable logical input batches and checkpoint-preservin
 restart boundaries, represent captured output, and assert row equality, batch
 counts, unique keys, and captured progress metrics without importing PySpark.
 The public Spark runner executes batches and restarts against a caller-owned
-session. See the
+session. The current source also offers an opt-in pytest runner fixture;
+see the
 [scenario model guide](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/scenario-model.md) and
 [results and assertions guide](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/results-and-assertions.md), plus the
 [progress and state assertions guide](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/progress-and-state-assertions.md),
 [two-batch Spark quick start and runner contract](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/spark-runner.md) and
-[checkpoint restart example](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/restart-scenarios.md).
-
-## Planned capabilities
-
-- pytest fixtures;
-- compatibility testing across supported Spark releases.
-
-These items are roadmap goals, not current package features. Each capability has
-its own issue, tests, documentation, and pull request.
+[checkpoint restart example](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/restart-scenarios.md),
+and [pytest integration guide](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/pytest-integration.md).
 
 ## Repository status
 
