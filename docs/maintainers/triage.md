@@ -1,14 +1,15 @@
 # Issue triage and labels
 
-This guide defines Streamcase's initial issue and pull-request label taxonomy.
+This guide defines Streamcase's issue and pull-request label taxonomy.
 Maintainers use labels to make the backlog searchable and to communicate what a
 contributor can do next. Labels do not replace a clear title, acceptance criteria,
 or a linked pull request.
 
 Keep classification small and evidence-based. An issue normally has one kind
-label, no more than one workflow-state label, and any number of relevant area,
-automation, or impact labels. Priority labels are intentionally omitted until the
-project has enough competing work to apply them consistently.
+label, no more than one workflow-state label, at most one size label, and any
+number of relevant area, automation, or impact labels. Priority labels are
+intentionally omitted until the project has enough competing work to apply them
+consistently.
 
 ## Assignment
 
@@ -67,6 +68,28 @@ find the issue.
 | `area: ci` | Continuous integration, GitHub Actions, or repository automation. |
 | `area: docs` | Guides, examples, API reference, or documentation tooling. |
 
+## Review size
+
+Use exactly one `size:` label when the scope is known. On an issue, it estimates
+the review scope of the intended change; revise it if the solution changes. On a
+pull request, label the actual change, including code, tests, documentation,
+complexity, and risk. Diff line counts are only a clue, not a target or CI gate.
+A small diff that changes a public API or release path may deserve a larger size.
+
+| Label | Typical review scope |
+| --- | --- |
+| `size: xs` | A tiny, isolated correction such as one typo or one obvious test expectation. |
+| `size: s` | One focused behavior or documentation section with straightforward verification. |
+| `size: m` | A cohesive feature or fix touching several related paths and tests. |
+| `size: l` | A broad change spanning multiple components or requiring substantial compatibility review. |
+| `size: xl` | A cross-cutting change that should normally be split; explain why one PR is necessary. |
+| `size: xxl` | Exceptional, repository-wide work; split into reviewable PRs unless it is indivisible. |
+
+Size is not priority, elapsed effort, or approval. For `xl` and `xxl`, split
+independent pieces into separate issues and pull requests. If a large change is
+truly cohesive, explain the coupling, review plan, and rollback in the PR.
+Historical items do not need bulk relabeling.
+
 ## Automation and compatibility
 
 These labels identify automated dependency work or the ecosystem affected by a
@@ -119,8 +142,8 @@ decision in a final comment.
 1. Confirm that the report uses the correct public or private intake route.
 2. Check for duplicates and link related issues or discussions.
 3. Confirm the problem statement, scope, acceptance criteria, and non-goals.
-4. Apply one kind label, one workflow-state label when needed, and relevant area
-   or compatibility labels.
+4. Apply one kind label, one workflow-state label when needed, one size label
+   when scope is known, and relevant area or compatibility labels.
 5. Record any decision or blocker in the issue instead of relying on a label
    alone.
 6. Remove `needs-triage` before implementation begins.
