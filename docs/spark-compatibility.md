@@ -18,9 +18,10 @@ runner support claim covers only the complete combinations tested in CI.
 
 The path-filtered Spark workflow runs on runner, packaging, compatibility-policy,
 smoke-check, and Spark-test changes. For each supported line, it builds both
-distributions, installs the matching extra in clean environments, and runs a
-local two-batch smoke example. It also runs the complete Spark integration
-suite, including the version check, from the installed wheel.
+distributions, installs `pytest` with exactly one matching Spark extra in clean
+environments, and runs both a local two-batch example and an explicitly loaded
+pytest-fixture smoke test. It also runs the complete Spark integration suite,
+including the version check, from the installed wheel.
 The ordinary quality job smoke-tests both distributions without PySpark; unit
 and Python compatibility jobs exclude tests marked `spark`.
 
