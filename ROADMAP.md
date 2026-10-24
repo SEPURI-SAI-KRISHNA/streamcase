@@ -59,9 +59,8 @@ The first alpha does **not** include progress, watermark, or state-store
 assertions; Spark 3.5 or other Spark-version compatibility; pytest fixtures or
 plugin registration; Kafka, Delta Lake, PyFlink, production monitoring, or
 checkpoint mutation. Phases 5 and 6 were independent follow-up work, not
-prerequisites for `0.1.0a1`. Their completed source work is a candidate for
-`0.2.0a1`, subject to its separate release gates; no stable API guarantee is
-implied.
+prerequisites for `0.1.0a1`; they were later published in `0.2.0a1`. No stable
+API guarantee is implied.
 
 The release gate followed a sequence of small, reviewed changes: audit the
 PyPI name, metadata, and distributions (#93); decide tag provenance (#94);
@@ -92,16 +91,20 @@ features or Spark 3.5 support; see the
 - Session ownership and cleanup semantics.
 - Documentation examples.
 
-## Proposed next alpha: 0.2.0a1
+## Progress and pytest alpha: 0.2.0a1
 
-The `0.2.0a1 - Progress and pytest integration` milestone tracks a proposed
-new minor-line alpha. It is **not yet published**; the current PyPI release is
-`0.1.0a2`. Issue #152 defines its scope, and issues #153-#158 track the
-audit, test, candidate, publication, and follow-up gates. Issue #156 prepares
-the source version through a reviewed candidate PR; the `v0.2.0a1` tag must
-wait until that PR is merged and issue #157's publication gates pass.
+`0.2.0a1` was published as a prerelease on 2026-10-24. The
+[GitHub release](https://github.com/SEPURI-SAI-KRISHNA/streamcase/releases/tag/v0.2.0a1)
+records the `v0.2.0a1` tag; the wheel and sdist are on
+[PyPI](https://pypi.org/project/streamcase/0.2.0a1/). The
+`0.2.0a1 - Progress and pytest integration` milestone tracks this new
+minor-line alpha. Issue #152 defined its scope, #153-#156 handled the audit,
+test, and candidate gates, and
+[#157](https://github.com/SEPURI-SAI-KRISHNA/streamcase/issues/157#issuecomment-6385634846)
+records publication and verification. Issue #158 tracks this documentation
+follow-up; the milestone closes only after its issues are complete.
 
-The proposed release adds the completed Phase 5 immutable progress/state
+The release adds the completed Phase 5 immutable progress/state
 snapshots and input-row, watermark, and state-metric assertions; tested Spark
 3.5 support alongside Spark 4.2; and Phase 6's explicitly loaded pytest
 fixture with a separate `pytest` extra. The core package remains free of
@@ -111,14 +114,14 @@ Python 3.10-3.13 without Spark, plus local Spark runs on Python 3.11 and Java
 Python/Java/Spark combinations are not part of this release claim; see the
 [compatibility policy](docs/spark-compatibility.md).
 
-Before tagging, the release must pass the
-[release checklist](docs/releasing.md): review package metadata and install
-guidance, prove clean wheel and sdist installs including the pytest extra on
-both Spark lines, pass required CI and security/dependency checks, and merge a
-reviewed version/changelog/release-notes candidate PR. Publication then uses
-the protected PyPI Trusted Publishing path, with published artifact hashes and
-clean installs verified before announcement. Failure of a gate delays the
-release; no tag or PyPI upload is implied by completing Phases 5 and 6.
+The [release checklist](docs/releasing.md) required reviewed metadata, install
+guidance, clean wheel and sdist checks with the pytest extra on both Spark
+lines, CI and security/dependency checks, and a merged candidate PR. The
+protected PyPI Trusted Publishing job then succeeded. Published wheel and
+sdist hashes matched the release workflow manifest, and separate clean PyPI
+installs of each distribution passed the core smoke test. Spark support is
+backed by the release-commit CI matrix, not a separate post-publication PyPI
+Spark install.
 
 This remains an experimental alpha, not a stable API commitment. Kafka, Delta
 Lake, PyFlink, production monitoring, checkpoint mutation, and wider Spark

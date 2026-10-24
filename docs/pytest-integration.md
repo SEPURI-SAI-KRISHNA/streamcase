@@ -6,26 +6,24 @@ with each test's `tmp_path` used as the parent for generated input and
 checkpoint files. You opt in explicitly; installing Streamcase does not
 register the plugin or start Spark automatically.
 
-This guide describes the **current source on `main`**. The published
-`0.1.0a2` prerelease does not contain the plugin, `pytest` extra, or `spark35`
-extra. Use an editable checkout until a later release includes them. Do not
-install `streamcase[pytest]` from `0.1.0a2` expecting this fixture.
+The plugin, `pytest` extra, and `spark35` extra are included in the published
+[0.2.0a1 prerelease](releases/0.2.0a1.md). They are absent from the older
+`0.1.0a2` prerelease.
 
 ## Install and prerequisites
 
 The tested local-mode combinations are Python 3.11 with Java 17 and either
 PySpark 4.2.x or PySpark 3.5.9 or later 3.5 patches. Install a Java 17 JDK
-separately and make it available to Spark. From a checkout, choose exactly one
-Spark extra:
+separately and make it available to Spark. Choose exactly one Spark extra:
 
 ```shell
-python -m pip install -e ".[pytest,spark]"
+python -m pip install "streamcase[pytest,spark]==0.2.0a1"
 ```
 
 Or, for Spark 3.5:
 
 ```shell
-python -m pip install -e ".[pytest,spark35]"
+python -m pip install "streamcase[pytest,spark35]==0.2.0a1"
 ```
 
 See the [Spark compatibility policy](spark-compatibility.md) for the full

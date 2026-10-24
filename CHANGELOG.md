@@ -6,13 +6,12 @@ All notable changes will be documented in this file. The format is based on
 
 ## [Unreleased]
 
-## [0.2.0a1] - Pending publication
+## [0.2.0a1] - 2026-10-24
 
-This alpha candidate adds progress and state assertions, Spark 3.5 support,
-and opt-in pytest integration. It has not been tagged or published. See the
-[candidate release notes](docs/releases/0.2.0a1.md) for the tested matrix,
-limitations, and installation guidance. Issue #157 records the publication
-and verification gate.
+This alpha was published on PyPI on 2026-10-24. It adds progress and state
+assertions, Spark 3.5 support, and opt-in pytest integration. See the
+[release notes](docs/releases/0.2.0a1.md) for the tested matrix, limitations,
+and installation guidance. Issue #157 records publication and verification.
 
 ### Added
 

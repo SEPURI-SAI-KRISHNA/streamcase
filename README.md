@@ -12,9 +12,8 @@ Structured Streaming tests.
 > the exact capabilities and tested combinations of the version you install.
 
 The [0.2.0a1 release notes](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/releases/0.2.0a1.md)
-describe its expanded alpha scope and limitations. Check
-[PyPI](https://pypi.org/project/streamcase/) to confirm that version is
-available before installing it; use a source checkout to try unpublished work.
+describe its expanded alpha scope and limitations. The verified prerelease is
+available on [PyPI](https://pypi.org/project/streamcase/0.2.0a1/).
 
 ## Problem
 
@@ -40,7 +39,7 @@ python -m pip install --pre "streamcase[spark]"
 ```
 
 The `0.2.0a1` release adds a separate `spark35` extra for PySpark 3.5.9 or
-later 3.5 patches. Once that version is available on PyPI, install it with:
+later 3.5 patches. Install it with:
 
 ```shell
 python -m pip install "streamcase[spark35]==0.2.0a1"
@@ -54,17 +53,15 @@ python -m pip install "streamcase[pytest,spark]==0.2.0a1"
 ```
 
 See the [pytest integration guide](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/pytest-integration.md)
-for explicit activation, a runnable example, and session ownership. For the
-current source before `0.2.0a1` is published, use a checkout and install
-`python -m pip install -e ".[pytest,spark]"` instead. The older `0.1.0a2`
-distribution does not include the `pytest` or `spark35` extras.
+for explicit activation, a runnable example, and session ownership. The older
+`0.1.0a2` distribution does not include the `pytest` or `spark35` extras.
 
 These extras keep PySpark out of the core dependency set. See the
 [Spark compatibility policy](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/spark-compatibility.md) for the supported
 Python, Java, and Spark combination. Contributors working from a checkout can
 use the [editable-install instructions](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/CONTRIBUTING.md#development-setup).
 
-## Current source capabilities
+## Capabilities in 0.2.0a1
 
 Streamcase can describe immutable logical input batches and checkpoint-preserving
 restart boundaries, represent captured output, and assert row equality, batch
