@@ -6,6 +6,14 @@ All notable changes will be documented in this file. The format is based on
 
 ## [Unreleased]
 
+## [0.2.0a1] - Pending publication
+
+This alpha candidate adds progress and state assertions, Spark 3.5 support,
+and opt-in pytest integration. It has not been tagged or published. See the
+[candidate release notes](docs/releases/0.2.0a1.md) for the tested matrix,
+limitations, and installation guidance. Issue #157 records the publication
+and verification gate.
+
 ### Added
 
 - An explicitly loaded `streamcase.pytest_plugin` fixture and separate `pytest`
@@ -44,10 +52,10 @@ All notable changes will be documented in this file. The format is based on
 
 ### Documentation
 
-- Add a runnable opt-in pytest integration guide covering source-only
-  installation, explicit activation, caller-owned sessions, and cleanup.
+- Add a runnable opt-in pytest integration guide covering installation,
+  explicit activation, caller-owned sessions, and cleanup.
 - Record the passing Spark 3.5 assessment, its narrow support decision, and
-  separate install instructions for the source-only `spark35` extra.
+  separate install instructions for the `spark35` extra.
 - Add a runnable guide for progress snapshots and input-row, watermark, and
   state assertions; clarify source-versus-published availability and update
   related result, runner, and restart guides.

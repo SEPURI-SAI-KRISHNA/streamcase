@@ -97,9 +97,9 @@ features or Spark 3.5 support; see the
 The `0.2.0a1 - Progress and pytest integration` milestone tracks a proposed
 new minor-line alpha. It is **not yet published**; the current PyPI release is
 `0.1.0a2`. Issue #152 defines its scope, and issues #153-#158 track the
-remaining audit, test, candidate, publication, and follow-up gates. The version
-and `v0.2.0a1` tag will be created only through the reviewed candidate and
-publication steps, not by this roadmap update.
+audit, test, candidate, publication, and follow-up gates. Issue #156 prepares
+the source version through a reviewed candidate PR; the `v0.2.0a1` tag must
+wait until that PR is merged and issue #157's publication gates pass.
 
 The proposed release adds the completed Phase 5 immutable progress/state
 snapshots and input-row, watermark, and state-metric assertions; tested Spark

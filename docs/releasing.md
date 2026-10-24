@@ -4,13 +4,17 @@
 
 1. Open a release issue with the target version and checklist.
 2. Confirm CI is green on every supported Spark line.
-3. Prepare the version, `CHANGELOG.md`, and `docs/releases/<version>.md` in a
-   reviewed pull request. Keep the alpha warning for alpha releases.
+3. Prepare the version, `CHANGELOG.md`, README/PyPI description, and
+   `docs/releases/<version>.md` in a reviewed pull request. Keep the alpha
+   warning for alpha releases, and avoid a description that becomes false when
+   the candidate is published.
 4. Review dependency, license, and security reports.
 5. Confirm the PyPI project has a Trusted Publisher for this GitHub repository and
    the `pypi` environment.
-6. Confirm clean wheel and sdist smoke checks pass in both core-only and supported
-   Spark environments. Neither check may import Streamcase from the source tree.
+6. Confirm clean wheel and sdist smoke checks pass in core-only environments
+   and with the `pytest` extra plus exactly one matching Spark extra on each
+   supported Spark line. Neither check may import Streamcase from the source
+   tree; the Spark checks must exercise the explicitly loaded pytest fixture.
 
 ## Candidate
 
@@ -18,9 +22,9 @@ Create the version change through a reviewed pull request and merge it to the
 protected `main` branch before tagging. Every human-authored pull-request commit
 requires a DCO `Signed-off-by` trailer. That trailer certifies contribution
 rights; it is **not** a cryptographic signature. For the first alpha,
-cryptographic commit and tag signatures are not required, and the release
-workflow does not claim to verify them. This policy can be strengthened in a
-separate issue before later releases.
+cryptographic commit and tag signatures are not required for the alpha line,
+and the release workflow does not claim to verify them. This policy can be
+strengthened in a separate issue before later releases.
 
 Create or select the release tag only after the version pull request is merged.
 Use the reviewed candidate notes as the basis for the draft GitHub release;

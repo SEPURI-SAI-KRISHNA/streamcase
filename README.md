@@ -6,20 +6,15 @@
 Streamcase is an early-development pytest-oriented toolkit for deterministic Apache Spark
 Structured Streaming tests.
 
-> **Alpha status:** the first prerelease is available on PyPI. Its Spark runner,
-> including checkpoint-preserving restart actions, scenario model, results, and
-> assertions are implemented. The API is experimental and may change in later
-> alphas; the [first-alpha scope](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/ROADMAP.md#first-alpha-release-010a1)
-> is narrower than the longer-term roadmap.
->
-> Progress and state assertions, Spark 3.5 support, and the opt-in pytest
-> fixture are available in the current source on `main`, but not in the
-> published `0.1.0a2` prerelease. Use an editable checkout until a later
-> release includes them.
+> **Alpha status:** Streamcase is available on PyPI, but its API remains
+> experimental and may change in later alphas. The features in a source
+> checkout can be newer than a published package. Check the release notes for
+> the exact capabilities and tested combinations of the version you install.
 
-The [first-alpha release notes](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/releases/0.1.0a1.md)
-describe the tested support matrix and limitations. Check
-[PyPI](https://pypi.org/project/streamcase/) for available versions.
+The [0.2.0a1 release notes](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/releases/0.2.0a1.md)
+describe its expanded alpha scope and limitations. Check
+[PyPI](https://pypi.org/project/streamcase/) to confirm that version is
+available before installing it; use a source checkout to try unpublished work.
 
 ## Problem
 
@@ -44,37 +39,38 @@ compatible Java JDK separately:
 python -m pip install --pre "streamcase[spark]"
 ```
 
-For Spark 3.5.9 or later 3.5 patches, the current source also provides a
-separate `spark35` extra. It is not in the published `0.1.0a2` release yet:
+The `0.2.0a1` release adds a separate `spark35` extra for PySpark 3.5.9 or
+later 3.5 patches. Once that version is available on PyPI, install it with:
 
 ```shell
-python -m pip install -e ".[spark35]"
+python -m pip install "streamcase[spark35]==0.2.0a1"
 ```
 
-For the current source's opt-in pytest fixture, combine the `pytest` extra
-with exactly one Spark extra, such as:
+For the opt-in pytest fixture, combine its `pytest` extra with exactly one
+Spark extra. For the Spark 4.2 line of `0.2.0a1`:
 
 ```shell
-python -m pip install -e ".[pytest,spark]"
+python -m pip install "streamcase[pytest,spark]==0.2.0a1"
 ```
 
 See the [pytest integration guide](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/pytest-integration.md)
-for explicit activation, a runnable example, and session ownership. The
-published `0.1.0a2` package does not include this extra or fixture.
+for explicit activation, a runnable example, and session ownership. For the
+current source before `0.2.0a1` is published, use a checkout and install
+`python -m pip install -e ".[pytest,spark]"` instead. The older `0.1.0a2`
+distribution does not include the `pytest` or `spark35` extras.
 
 These extras keep PySpark out of the core dependency set. See the
 [Spark compatibility policy](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/spark-compatibility.md) for the supported
 Python, Java, and Spark combination. Contributors working from a checkout can
 use the [editable-install instructions](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/CONTRIBUTING.md#development-setup).
 
-## Available today
+## Current source capabilities
 
 Streamcase can describe immutable logical input batches and checkpoint-preserving
 restart boundaries, represent captured output, and assert row equality, batch
 counts, unique keys, and captured progress metrics without importing PySpark.
 The public Spark runner executes batches and restarts against a caller-owned
-session. The current source also offers an opt-in pytest runner fixture;
-see the
+session. It also offers an opt-in pytest runner fixture. See the
 [scenario model guide](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/scenario-model.md) and
 [results and assertions guide](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/results-and-assertions.md), plus the
 [progress and state assertions guide](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/progress-and-state-assertions.md),
