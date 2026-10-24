@@ -59,5 +59,5 @@ The run does not establish equivalence outside those tests.
 and PySpark `>=3.5.9,<3.6` in local mode, enforced by a permanent CI job and a
 separate `spark35` extra in #111. Do not widen the existing `spark` extra or
 claim support for Spark 4.0-4.1, earlier 3.5 patches, remote clusters, or
-unverified Python/Java combinations. The `spark35` extra is available from
-current source only until a later Streamcase release is published.
+unverified Python/Java combinations. The `spark35` extra was first published
+in [Streamcase 0.2.0a1](releases/0.2.0a1.md).

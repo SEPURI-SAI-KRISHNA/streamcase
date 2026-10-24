@@ -2,9 +2,9 @@
 
 Streamcase captures a small, immutable subset of Spark Structured Streaming
 progress for each unambiguously matched, callback-backed trigger. The models
-and assertions can also be used without PySpark. This guide describes the
-current source on `main`; the published `0.1.0a2` prerelease predates these
-progress APIs. Use an editable checkout to try them until a later release.
+and assertions can also be used without PySpark. These APIs are available in
+the published [0.2.0a1 prerelease](releases/0.2.0a1.md); the older `0.1.0a2`
+prerelease predates them.
 
 For the Spark runner, use one of the [tested Python 3.11 and Java 17 Spark
 combinations](spark-compatibility.md). Progress assertions import no PySpark;
@@ -69,9 +69,9 @@ or `ValueError`. The three assertions require `action_index` and
 
 ## Spark example (fixed event time)
 
-Install the checkout with `python -m pip install -e ".[spark]"` for Spark 4.2
-or `python -m pip install -e ".[spark35]"` for Spark 3.5.9+, and provide a
-Java 17 JDK. This example uses fixed event-time input and Spark's
+Install `streamcase[spark]==0.2.0a1` for Spark 4.2 or
+`streamcase[spark35]==0.2.0a1` for Spark 3.5.9+, and provide a Java 17 JDK.
+This example uses fixed event-time input and Spark's
 `processAllAvailable()` barrier, not sleeps or a wall-clock deadline.
 
 ```python

@@ -4,7 +4,7 @@ Streamcase keeps its backend-independent scenario, result, and assertion APIs
 usable without Apache Spark. Spark runner users opt into one of two deliberately
 narrow, tested dependency lines.
 
-## Supported matrix in the current source
+## Tested matrix for 0.2.0a1
 
 | Scope | Tested combination | Policy |
 | --- | --- | --- |
@@ -49,18 +49,17 @@ The core package is available on PyPI without a PySpark dependency. Use
 python -m pip install --pre streamcase
 ```
 
-The published `0.1.0a2` release provides the Spark 4.2 `spark` extra:
+The published `0.2.0a1` prerelease provides both Spark extras. Choose exactly
+one for the supported Spark line:
 
 ```shell
-python -m pip install --pre "streamcase[spark]"
+python -m pip install "streamcase[spark]==0.2.0a1"
 ```
 
-The `spark35` extra is new in the current source and is **not yet available in
-the published `0.1.0a2` package**. To try it before the next release, install
-from a checkout using Python 3.11 and Java 17:
+For Spark 3.5.9 or later 3.5 patches, use Python 3.11 and Java 17 with:
 
 ```shell
-python -m pip install -e ".[spark35]"
+python -m pip install "streamcase[spark35]==0.2.0a1"
 ```
 
 For an editable contributor installation that includes both development and

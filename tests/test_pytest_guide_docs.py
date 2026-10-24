@@ -16,4 +16,5 @@ def test_pytest_guide_blocks_compile_without_pyspark() -> None:
         code = section.split("```python\n", 1)[1].split("\n```", 1)[0]
         compile(code, str(guide), "exec")
 
-    assert "published\n`0.1.0a2` prerelease does not contain" in source
+    assert "[0.2.0a1 prerelease](releases/0.2.0a1.md)" in source
+    assert "Use an editable checkout until a later release" not in source

@@ -8,12 +8,11 @@ raises an installation hint.
 
 ## Quick start
 
-From a checkout, use Python 3.11 and a Java 17 JDK on `PATH` or in
-`JAVA_HOME`. Install either `python -m pip install -e ".[spark]"` for PySpark
-4.2 or `python -m pip install -e ".[spark35]"` for PySpark 3.5.9 or later 3.5
-patches. The latter extra is available in current source, not the published
-`0.1.0a2` release. The example runs in Spark local mode; no cluster or timing
-sleeps are needed.
+Use Python 3.11 and a Java 17 JDK on `PATH` or in `JAVA_HOME`. Install either
+`python -m pip install "streamcase[spark]==0.2.0a1"` for PySpark 4.2 or
+`python -m pip install "streamcase[spark35]==0.2.0a1"` for PySpark 3.5.9 or
+later 3.5 patches. Both extras are in the published prerelease. The example
+runs in Spark local mode; no cluster or timing sleeps are needed.
 
 ```python
 from pyspark.sql import DataFrame, SparkSession
