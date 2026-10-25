@@ -31,8 +31,8 @@ forward them unchanged from `streamcase.pytest_plugin.streamcase_runner`:
 
 ```python
 max_output_rows: int | None = 10_000
-max_input_bytes_per_batch: int | None = 8_388_608   # 8 MiB
-max_input_bytes_per_run: int | None = 67_108_864    # 64 MiB
+max_input_bytes_per_batch: int | None = 8_388_608  # 8 MiB
+max_input_bytes_per_run: int | None = 67_108_864  # 64 MiB
 ```
 
 Each limit is inclusive. A value must be a positive, non-boolean integer;
