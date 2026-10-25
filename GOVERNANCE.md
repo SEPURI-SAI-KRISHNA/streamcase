@@ -40,8 +40,15 @@ Releases are proposed and reviewed through a release issue. Artifacts are built 
 CI and published with trusted identity. A release must not be uploaded manually
 from a maintainer workstation.
 
+## Repository administration
+
+Maintainers follow the
+[repository settings baseline](docs/maintainers/repository-settings.md) for
+metadata, feature toggles, merge methods, and protected-branch expectations.
+Changing the documented baseline requires a public issue and pull request;
+GitHub settings are applied and verified separately after that review.
+
 ## Changes to governance
 
 Governance changes require a dedicated issue and pull request. The pull request
 must remain open for at least seven days to allow community comment.
-
