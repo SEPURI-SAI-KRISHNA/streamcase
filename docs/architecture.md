@@ -41,6 +41,9 @@ The implemented [public Spark runner contract](spark-runner.md) covers the
 current batch and restart behavior. The
 [checkpoint restart guide](restart-scenarios.md) has a runnable example and
 states the user-facing guarantees and limits.
+The accepted [bounded capture policy](design/0005-bounded-capture-policy.md)
+defines planned 0.3.0a1 guardrails; these parameters are not yet implemented
+in the current runner or available in the published 0.2.0a1 release.
 
 ## Boundaries
 
