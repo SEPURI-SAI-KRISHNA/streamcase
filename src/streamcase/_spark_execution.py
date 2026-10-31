@@ -27,6 +27,7 @@ def _process_batch_action(
     lifecycle: _QueryLifecycle,
     capture: _BatchCapture,
 ) -> tuple[CapturedProgress, ...]:
+    capture.set_action_index(index)
     try:
         query = lifecycle.require_active()
         progress_before = tuple(query.recentProgress)
@@ -42,6 +43,11 @@ def _process_batch_action(
             str(query.runId),
         )
     except Exception as error:
+        limit_error = capture.limit_error()
+        if limit_error is not None:
+            if error is limit_error:
+                raise
+            raise limit_error from error
         raise RuntimeError(f"Batch action at index {index} failed: {error}") from error
 
 
@@ -96,6 +102,7 @@ def _execute_batches(
         query_options=query_options,
     )
     with _cleanup_on_exit("streaming query", lifecycle.stop):
+        capture.set_action_index(0)
         lifecycle.start(stream, action_index=0)
         input_writer = AtomicBatchWriter(directories)
         progress: list[CapturedProgress] = []
@@ -106,5 +113,6 @@ def _execute_batches(
                 )
             else:
                 assert rebuild_stream is not None
+                capture.set_action_index(index + 1)
                 _process_restart_action(index, rebuild_stream, lifecycle)
     return ScenarioResult(capture.snapshot(), progress=progress)

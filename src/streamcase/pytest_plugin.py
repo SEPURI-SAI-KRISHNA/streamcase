@@ -30,6 +30,7 @@ def streamcase_runner(tmp_path: Path) -> Callable[..., ScenarioResult]:
         source_options: Mapping[str, str] | None = None,
         query_options: Mapping[str, str] | None = None,
         retain_artifacts: bool = False,
+        max_output_rows: int | None = 10_000,
     ) -> ScenarioResult:
         from streamcase.spark import run_scenario
 
@@ -43,6 +44,7 @@ def streamcase_runner(tmp_path: Path) -> Callable[..., ScenarioResult]:
             query_options=query_options,
             base_dir=tmp_path,
             retain_artifacts=retain_artifacts,
+            max_output_rows=max_output_rows,
         )
 
     return run

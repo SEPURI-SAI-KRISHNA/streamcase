@@ -9,6 +9,7 @@ from typing import Any, cast
 import pytest
 
 from streamcase import (
+    ScenarioLimitError,
     ScenarioResult,
     assert_batch_count,
     assert_rows_equal,
@@ -37,6 +38,9 @@ class _FakeDataFrame:
 
     def collect(self) -> list[_FakeRow]:
         return self.rows
+
+    def limit(self, count: int) -> _FakeDataFrame:
+        return _FakeDataFrame(self.rows[:count])
 
 
 class _FakeQuery:
@@ -260,6 +264,57 @@ def test_empty_output_callback_remains_a_distinct_result_batch(
     assert result.batches[0].batch_id == 0
     assert_rows_equal(result, [])
     assert query.stop_calls == 1
+
+
+def test_spark_wrapped_output_overflow_remains_a_typed_error_with_action_context(
+    run_directories: RunDirectories,
+) -> None:
+    class _WrappingQuery(_FakeQuery):
+        def processAllAvailable(self) -> None:  # noqa: N802
+            try:
+                super().processAllAvailable()
+            except ScenarioLimitError as error:
+                raise RuntimeError("Spark wrapped the callback error") from error
+
+    query = _WrappingQuery(run_directories)
+    capture = _BatchCapture(max_output_rows=1)
+
+    with pytest.raises(ScenarioLimitError, match="Batch action at index 1") as error_info:
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(batch({"id": 1}), batch({"id": 2})),
+            run_directories,
+            capture,
+        )
+
+    error = error_info.value
+    assert (error.action_index, error.resource, error.limit, error.observed_at_least) == (
+        1,
+        "output_rows",
+        1,
+        2,
+    )
+    assert isinstance(error.__cause__, RuntimeError)
+    assert "Spark wrapped" in str(error.__cause__)
+    assert query.stop_calls == 1
+    assert len(capture.snapshot()) == 1
+
+
+def test_direct_callback_overflow_is_not_wrapped_again(run_directories: RunDirectories) -> None:
+    query = _FakeQuery(run_directories)
+    capture = _BatchCapture(max_output_rows=1)
+
+    with pytest.raises(ScenarioLimitError, match="Batch action at index 0") as error_info:
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(batch({"id": 1}, {"id": 2})),
+            run_directories,
+            capture,
+        )
+
+    assert error_info.value.__cause__ is None
+    assert query.stop_calls == 1
+    assert capture.snapshot() == ()
 
 
 def test_missing_progress_report_does_not_create_a_snapshot(

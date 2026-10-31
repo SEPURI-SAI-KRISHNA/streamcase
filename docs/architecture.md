@@ -42,8 +42,9 @@ current batch and restart behavior. The
 [checkpoint restart guide](restart-scenarios.md) has a runnable example and
 states the user-facing guarantees and limits.
 The accepted [bounded capture policy](design/0005-bounded-capture-policy.md)
-defines planned 0.3.0a1 guardrails; these parameters are not yet implemented
-in the current runner or available in the published 0.2.0a1 release.
+defines planned 0.3.0a1 guardrails. The source runner now supports its output
+row limit; input-byte limits remain future work. None of these parameters are
+available in the published 0.2.0a1 release.
 
 ## Boundaries
 
@@ -136,17 +137,21 @@ boundaries under the runner's control without mutating caller mappings.
 ## Driver-side batch capture
 
 One private capture object owns the `foreachBatch` callback state for a runner
-invocation. Each callback collects its intentionally small output DataFrame on
-the driver, recursively converts Spark rows into ordinary Python mappings and
-sequences, and constructs an immutable `CapturedBatch` with Spark's batch
-identifier. No DataFrame, Spark `Row`, JVM handle, or mutable callback collection
-is retained.
+invocation. The public runner defaults to a 10,000-row allowance across the
+entire run. Each callback collects at most the remaining allowance plus one
+overflow witness, recursively converts accepted Spark rows into ordinary
+Python mappings and sequences, and constructs an immutable `CapturedBatch`
+with Spark's batch identifier. `max_output_rows=None` restores unrestricted
+collection. No DataFrame, Spark `Row`, JVM handle, or mutable callback collection
+is retained after a successful callback.
 
 The capture lock covers collection, conversion, and publication. A runner
 snapshot therefore waits for an in-flight callback and sees either the complete
 captured batch or no batch from that callback. Complete batches remain distinct
 in callback order, including callbacks whose output DataFrame contains zero
-rows. Query configuration and lifecycle remain separate responsibilities.
+rows. An overflow fails without appending a partial batch. A row-count limit
+does not bound Spark state, individual row size, or process memory. Query
+configuration and lifecycle remain separate responsibilities.
 
 ## Batch execution
 
