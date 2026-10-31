@@ -133,6 +133,7 @@ def test_public_runner_composes_validated_source_and_managed_execution(
         query_options=caller_query_options,
         base_dir=tmp_path,
         retain_artifacts=True,
+        max_output_rows=7,
     )
 
     assert result is sentinel
@@ -149,6 +150,7 @@ def test_public_runner_composes_validated_source_and_managed_execution(
             "retain_artifacts": True,
             "output_mode": "update",
             "query_options": {"customWriterOption": "yes"},
+            "max_output_rows": 7,
         }
     ]
     assert caller_source_options == {"timestampFormat": "yyyy-MM-dd"}
@@ -188,6 +190,36 @@ def test_public_runner_rejects_invalid_arguments_before_managed_execution(
         )
     with pytest.raises(ValueError, match="output mode must be"):
         spark_api.run_scenario(spark, valid_scenario, **valid, output_mode="overwrite")
+
+
+@pytest.mark.parametrize(
+    ("invalid", "error_type"),
+    [
+        (True, TypeError),
+        (0, ValueError),
+        (-1, ValueError),
+        (1.5, TypeError),
+        ("10", TypeError),
+    ],
+)
+def test_invalid_output_limit_fails_before_managed_execution(
+    spark_api: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    invalid: object,
+    error_type: type[Exception],
+) -> None:
+    def unexpected_managed(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("managed execution was called")
+
+    monkeypatch.setattr(spark_api, "_run_managed_batches", unexpected_managed)
+    with pytest.raises(error_type, match="max_output_rows must be a positive integer or None"):
+        spark_api.run_scenario(
+            _FakeSparkSession(),
+            scenario(batch({"id": 1})),
+            schema="id LONG",
+            transform=lambda frame: frame,
+            max_output_rows=invalid,
+        )
 
 
 def test_struct_type_schema_is_accepted(

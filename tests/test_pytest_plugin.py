@@ -82,6 +82,7 @@ def test_fixture_forwards_public_runner_arguments(
         source_options=source_options,
         query_options=query_options,
         retain_artifacts=True,
+        max_output_rows=7,
     )
 
     assert result is expected
@@ -95,6 +96,7 @@ def test_fixture_forwards_public_runner_arguments(
             "query_options": query_options,
             "base_dir": tmp_path,
             "retain_artifacts": True,
+            "max_output_rows": 7,
         },
     }
 
@@ -127,4 +129,5 @@ def test_fixture_uses_public_defaults(
         "query_options": None,
         "base_dir": tmp_path,
         "retain_artifacts": False,
+        "max_output_rows": 10_000,
     }

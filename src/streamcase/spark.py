@@ -21,6 +21,7 @@ from streamcase._directories import RunDirectories
 from streamcase._spark_managed import _run_managed_batches
 from streamcase._spark_query_options import _prepare_query_configuration
 from streamcase._spark_source import _build_json_stream, _copy_source_options
+from streamcase.limits import _validate_positive_limit
 from streamcase.results import ScenarioResult
 from streamcase.scenario import Scenario
 
@@ -59,6 +60,7 @@ def run_scenario(
     query_options: Mapping[str, str] | None = None,
     base_dir: str | os.PathLike[str] | None = None,
     retain_artifacts: bool = False,
+    max_output_rows: int | None = 10_000,
 ) -> ScenarioResult:
     """Run a scenario using a caller-owned Spark session."""
     if not isinstance(spark, SparkSession):
@@ -74,6 +76,7 @@ def run_scenario(
 
     approved_source_options = _copy_source_options(source_options)
     approved_mode, approved_query_options = _prepare_query_configuration(output_mode, query_options)
+    approved_max_output_rows = _validate_positive_limit("max_output_rows", max_output_rows)
 
     def build_stream(directories: RunDirectories) -> DataFrame:
         source = _build_json_stream(
@@ -91,4 +94,5 @@ def run_scenario(
         retain_artifacts=retain_artifacts,
         output_mode=approved_mode,
         query_options=approved_query_options,
+        max_output_rows=approved_max_output_rows,
     )

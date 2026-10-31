@@ -86,3 +86,28 @@ The return value is an immutable `ScenarioResult` with no live Spark objects.
 Use the [result assertions](results-and-assertions.md) for output and the
 [progress guide](progress-and-state-assertions.md) for input-row, watermark,
 and state-operator observations.
+
+## Bounded output capture in source checkouts
+
+The current source checkout adds `max_output_rows` to `run_scenario(...)`.
+It defaults to `10_000` and caps the total number of output rows captured
+across all callbacks and `Restart` actions in one run. The limit is inclusive:
+exactly 10,000 rows succeed, while evidence of one more raises the public
+`ScenarioLimitError` with action index, Spark batch ID, limit, and an observed
+lower bound. No partial `ScenarioResult` is returned. Zero-row callbacks
+remain visible and do not consume the allowance. A limit failure still
+attempts the runner-owned query and directory cleanup; it never stops the
+caller's Spark session.
+
+Pass a larger positive integer for a deliberately larger test, or `None` to
+disable this row limit. Booleans, non-integers, zero, and negative values are
+rejected before the query or run directory is created. Disabling the limit
+restores full driver-side collection, which can exhaust memory. Even with a
+limit, one very large or deeply nested row, Spark state, and the checkpoint
+can use substantial memory or disk. This is a retained-row guardrail, **not**
+a process-wide memory bound or execution deadline. Input-byte limits are
+planned separately in [ADR 0005](design/0005-bounded-capture-policy.md).
+
+`max_output_rows` is **not in the published 0.2.0a1 package** installed in
+the quick start above. It will first be available in a later prerelease after
+the bounded-runner work passes the supported Spark CI lanes.
