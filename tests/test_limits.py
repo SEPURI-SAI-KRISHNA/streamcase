@@ -34,7 +34,18 @@ def test_limit_error_exposes_action_resource_and_lower_bound_without_spark() -> 
         observed_at_least=9,
     )
     assert input_error.batch_id is None
+    assert input_error.row_index is None
     assert str(input_error).startswith("Batch action at index 1 exceeded input_bytes_per_batch")
+
+    row_error = ScenarioLimitError(
+        action_index=3,
+        resource="input_bytes_per_run",
+        limit=16,
+        observed_at_least=17,
+        row_index=2,
+    )
+    assert row_error.row_index == 2
+    assert "Batch action at index 3 (input row 2)" in str(row_error)
 
 
 @pytest.mark.parametrize("value", [None, 1, 10_000])

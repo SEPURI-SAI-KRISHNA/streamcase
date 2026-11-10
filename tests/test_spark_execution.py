@@ -317,6 +317,52 @@ def test_direct_callback_overflow_is_not_wrapped_again(run_directories: RunDirec
     assert capture.snapshot() == ()
 
 
+def test_input_overflow_keeps_typed_error_and_never_processes_rejected_batch(
+    run_directories: RunDirectories,
+) -> None:
+    query = _FakeQuery(run_directories)
+
+    with pytest.raises(ScenarioLimitError, match="Batch action at index 0") as error_info:
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(batch({"id": 1})),
+            run_directories,
+            _BatchCapture(),
+            max_input_bytes_per_batch=8,
+        )
+
+    assert (error_info.value.resource, error_info.value.row_index) == (
+        "input_bytes_per_batch",
+        0,
+    )
+    assert query.processed == []
+    assert query.stop_calls == 1
+    assert list(run_directories.input_dir.iterdir()) == []
+
+
+def test_input_run_budget_persists_across_restart(run_directories: RunDirectories) -> None:
+    first_query = _FakeQuery(run_directories)
+    replacement_query = _FakeQuery(run_directories, first_query.processed)
+
+    with pytest.raises(ScenarioLimitError, match="Batch action at index 2") as error_info:
+        _execute_batches(
+            cast(Any, _FakeStream(first_query)),
+            scenario(batch({"id": 1}), restart(), batch({"id": 2})),
+            run_directories,
+            _BatchCapture(),
+            rebuild_stream=lambda: cast(Any, _FakeStream(replacement_query)),
+            max_input_bytes_per_run=9,
+        )
+
+    assert error_info.value.resource == "input_bytes_per_run"
+    assert error_info.value.observed_at_least == 18
+    assert first_query.stop_calls == replacement_query.stop_calls == 1
+    assert len(first_query.processed) == 1
+    assert [path.name for path in run_directories.input_dir.iterdir()] == [
+        "batch-00000000000000000000.json"
+    ]
+
+
 def test_missing_progress_report_does_not_create_a_snapshot(
     run_directories: RunDirectories,
 ) -> None:

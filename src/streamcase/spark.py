@@ -61,6 +61,8 @@ def run_scenario(
     base_dir: str | os.PathLike[str] | None = None,
     retain_artifacts: bool = False,
     max_output_rows: int | None = 10_000,
+    max_input_bytes_per_batch: int | None = 8_388_608,
+    max_input_bytes_per_run: int | None = 67_108_864,
 ) -> ScenarioResult:
     """Run a scenario using a caller-owned Spark session."""
     if not isinstance(spark, SparkSession):
@@ -77,6 +79,12 @@ def run_scenario(
     approved_source_options = _copy_source_options(source_options)
     approved_mode, approved_query_options = _prepare_query_configuration(output_mode, query_options)
     approved_max_output_rows = _validate_positive_limit("max_output_rows", max_output_rows)
+    approved_batch_bytes = _validate_positive_limit(
+        "max_input_bytes_per_batch", max_input_bytes_per_batch
+    )
+    approved_run_bytes = _validate_positive_limit(
+        "max_input_bytes_per_run", max_input_bytes_per_run
+    )
 
     def build_stream(directories: RunDirectories) -> DataFrame:
         source = _build_json_stream(
@@ -95,4 +103,6 @@ def run_scenario(
         output_mode=approved_mode,
         query_options=approved_query_options,
         max_output_rows=approved_max_output_rows,
+        max_input_bytes_per_batch=approved_batch_bytes,
+        max_input_bytes_per_run=approved_run_bytes,
     )

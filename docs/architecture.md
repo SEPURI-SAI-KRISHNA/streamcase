@@ -42,9 +42,9 @@ current batch and restart behavior. The
 [checkpoint restart guide](restart-scenarios.md) has a runnable example and
 states the user-facing guarantees and limits.
 The accepted [bounded capture policy](design/0005-bounded-capture-policy.md)
-defines planned 0.3.0a1 guardrails. The source runner now supports its output
-row limit; input-byte limits remain future work. None of these parameters are
-available in the published 0.2.0a1 release.
+defines planned 0.3.0a1 guardrails. The source runner now supports output-row,
+per-batch input-byte, and per-run input-byte limits. None of these parameters
+are available in the published 0.2.0a1 release.
 
 ## Boundaries
 
@@ -107,16 +107,20 @@ One private writer instance publishes a scenario's `Batch` actions sequentially.
 It uses the deterministic JSON Lines encoder and assigns zero-based, monotonic
 names such as `batch-00000000000000000000.json`.
 
-The complete batch is encoded before filesystem changes. The writer then creates
-a hidden temporary file beside the destination in `input/` using exclusive file
-creation, writes UTF-8 with LF line endings, flushes and synchronizes the file,
-and performs a same-directory rename to the visible name. Spark therefore never
-sees a final path containing partial content. The separate `temporary/` directory
-remains available for other runner-owned working files.
+The writer creates a hidden temporary file beside the destination in `input/`
+using exclusive file creation. It encodes one row at a time as UTF-8 JSON Lines,
+checks the exact encoded byte count against both the batch and run allowances,
+and writes only accepted rows to the hidden file. The run total counts only
+successfully published files, including those before a `Restart`. Once the full
+batch fits, the writer flushes and synchronizes the file and performs a
+same-directory rename to the visible name. Spark therefore never sees a final
+path containing partial content. The separate `temporary/` directory remains
+available for other runner-owned working files.
 
 An existing temporary or destination path is a collision and fails without
-overwriting it. Failed writes or renames remove the writer's temporary file and
-do not advance the monotonic index. The writer is private and sequential;
+overwriting it. Failed serialization, limit checks, writes, or renames remove
+the writer's temporary file without advancing the monotonic index or the
+published-byte total. The writer is private and sequential;
 parallel publication within one run is not supported.
 
 ## Spark JSON input source

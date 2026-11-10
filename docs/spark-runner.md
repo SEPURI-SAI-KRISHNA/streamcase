@@ -87,7 +87,7 @@ Use the [result assertions](results-and-assertions.md) for output and the
 [progress guide](progress-and-state-assertions.md) for input-row, watermark,
 and state-operator observations.
 
-## Bounded output capture in source checkouts
+## Bounded scenario capture in source checkouts
 
 The current source checkout adds `max_output_rows` to `run_scenario(...)`.
 It defaults to `10_000` and caps the total number of output rows captured
@@ -106,8 +106,28 @@ restores full driver-side collection, which can exhaust memory. Even with a
 limit, one very large or deeply nested row, Spark state, and the checkpoint
 can use substantial memory or disk. This is a retained-row guardrail, **not**
 a process-wide memory bound or execution deadline. Input-byte limits are
-planned separately in [ADR 0005](design/0005-bounded-capture-policy.md).
+described below and in [ADR 0005](design/0005-bounded-capture-policy.md).
 
-`max_output_rows` is **not in the published 0.2.0a1 package** installed in
-the quick start above. It will first be available in a later prerelease after
-the bounded-runner work passes the supported Spark CI lanes.
+The current source checkout also adds `max_input_bytes_per_batch=8_388_608`
+(8 MiB) and `max_input_bytes_per_run=67_108_864` (64 MiB). They count the
+exact UTF-8 JSON Lines bytes, including one LF after each input row. The
+per-batch limit resets for every `Batch` action; the run total counts only
+successfully published files and persists across `Restart`. Both limits are
+inclusive. An oversize action raises `ScenarioLimitError` with its action and
+input-row indexes, the exceeded budget, and the observed byte count. The
+rejected action never publishes a final file or invokes Spark processing;
+the hidden temporary file is removed, and the next input filename remains
+available for a retry. The runner then follows its usual query and directory
+cleanup rules.
+
+Each byte limit can be raised independently or explicitly disabled with
+`None`. Invalid values fail before run-directory creation. These limits do
+not bound the memory needed to construct a `Batch`, serialize one very large
+row, run Spark transformations, or store checkpoints. Disabling both input
+limits restores unrestricted file publication and can exhaust disk space.
+See [ADR 0005](design/0005-bounded-capture-policy.md) for the accounting and
+failure contract.
+
+These three limit options are **not in the published 0.2.0a1 package**
+installed in the quick start above. They will first be available in a later
+prerelease after the bounded-runner work passes the supported Spark CI lanes.
