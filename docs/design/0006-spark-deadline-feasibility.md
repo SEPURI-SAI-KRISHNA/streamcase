@@ -1,6 +1,6 @@
 # ADR 0006: Per-action Spark deadline feasibility
 
-- Status: Decision for 0.3.0a1: defer a guaranteed in-process deadline
+- Status: Accepted no-go for 0.3.0a1: defer a guaranteed in-process deadline
 - Decision scope: Phase 7, issue #170; follow-up #171
 - Evidence: guarded probe in `tests/spark/test_deadline_probe.py`, run by both
   Spark 3.5 and 4.2 jobs in `.github/workflows/spark.yml`
@@ -36,8 +36,21 @@ force a deadline would violate Streamcase's ownership contract.
 
 ## Reproducible cross-line probe
 
-The guarded probe runs against the installed wheel in both CI Spark lanes.
-It starts a file-stream query with a `foreachBatch` callback held by a Python
+The guarded probe ran against the installed wheel in both CI Spark lanes on
+2026-11-10. The [Spark 3.5.9 job](https://github.com/SEPURI-SAI-KRISHNA/streamcase/actions/runs/42779931132/job/129707238623)
+and [Spark 4.2.1 job](https://github.com/SEPURI-SAI-KRISHNA/streamcase/actions/runs/42779931132/job/129707238682)
+both passed and uploaded their `spark-deadline-probe-*` observation artifacts.
+The recorded outcomes were the same on both lines:
+
+| Observation | Spark 3.5.9 | Spark 4.2.1 |
+| --- | --- | --- |
+| Python timer fired while `processAllAvailable()` remained blocked | Yes | Yes |
+| Timed `awaitTermination(1)` reported query termination | No | No |
+| `stop()` completed within the 0.2-second window before callback release | No | No |
+| After callback release, `processAllAvailable()` and `stop()` | Both returned | Both returned |
+| Query inactive and caller session usable afterward | Yes | Yes |
+
+The probe starts a file-stream query with a `foreachBatch` callback held by a Python
 event, calls `processAllAvailable()` from another thread, and checks that a
 fired Python timer and a timed `awaitTermination()` leave that action and query
 active. It then requests `stop()` on a separate thread, records whether stop
@@ -65,9 +78,20 @@ still using the owned query after the runner returns would violate cleanup
 and exception-preservation guarantees. `awaitTermination(timeout)` is not a
 substitute for action cancellation.
 
-Issue #171 will record the release-facing no-go and a narrower future
-research path. A future deadline proposal needs a separately owned execution
+Issue #171 records the release-facing no-go and a narrower future research
+path. A future deadline proposal needs a separately owned execution
 boundary with a defined termination protocol, evidence under non-cooperative
 callbacks and both supported Spark lines, and a clear account of what can
 remain running after timeout. Until then, Streamcase promises bounded
 captured rows and published input bytes, not bounded execution time.
+
+One narrower research candidate is a **separate opt-in process runner** that
+creates and owns its own Spark session, returns results over an explicit
+inter-process protocol, and can escalate from graceful stop to worker-process
+termination. It cannot reuse or kill a session passed to the current
+`run_scenario(spark, ...)` API without breaking caller ownership. Such a
+proposal would need to specify what happens to checkpoints and external
+cluster work after a hard kill, preserve the primary deadline failure when
+cleanup also fails, and prove behavior with non-cooperative Python callbacks
+and blocked Spark/JVM work on both supported lines. This is research scope,
+not a promised feature or a guarantee of graceful cleanup.

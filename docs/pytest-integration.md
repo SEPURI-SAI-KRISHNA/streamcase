@@ -115,6 +115,13 @@ explicit opt-out. See the [bounded-capture contract](spark-runner.md#bounded-sce
 for limits and failure behavior. These options are not present in the
 published 0.2.0a1 package used by the installation examples above.
 
+The fixture has no execution-time limit of its own and does not add a
+`timeout` or `deadline` argument. A pytest or CI timeout outside Streamcase
+may interrupt the test process, but cannot guarantee that the runner's Spark
+query stopped cleanly before interruption. See the
+[runner's execution-time limitation](spark-runner.md#execution-time-limitation)
+and the [deadline assessment](design/0006-spark-deadline-feasibility.md).
+
 Core-only users can import `streamcase` and use scenario/result/assertion APIs
 without installing PySpark or registering the plugin. Registering the plugin
 requires pytest but does not import PySpark until the runner callable is

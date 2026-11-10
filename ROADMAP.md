@@ -127,3 +127,20 @@ This remains an experimental alpha, not a stable API commitment. Kafka, Delta
 Lake, PyFlink, production monitoring, checkpoint mutation, and wider Spark
 compatibility remain out of scope. Each excluded backend or integration
 requires its own design proposal before entering a later release plan.
+
+## Phase 7: bounded scenario execution
+
+The current source checkout implements the [bounded-capture policy](docs/design/0005-bounded-capture-policy.md):
+an inclusive 10,000-row output capture default, 8 MiB per-batch and 64 MiB
+per-run serialized-input defaults, and typed limit failures. Spark 3.5 and 4.2
+CI cover cleanup, caller-session isolation, and retained-artifact behavior.
+These guardrails are candidates for a future 0.3.0a1 prerelease; they are not
+in the published 0.2.0a1 distribution.
+
+Issue #170's [deadline assessment](docs/design/0006-spark-deadline-feasibility.md)
+found no defensible in-process per-action deadline guarantee. Issue #171 records
+the no-go in user-facing documentation: 0.3.0a1 will not add a `timeout` or
+`deadline` runner/fixture parameter. A future proposal must isolate the
+execution boundary and demonstrate bounded termination with non-cooperative
+workloads on both supported Spark lines without taking ownership of the
+caller's session. No release tag or publication is implied by Phase 7 work.

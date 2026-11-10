@@ -6,6 +6,19 @@ All notable changes will be documented in this file. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- Source-checkout guardrails for a future prerelease: default 10,000 captured
+  output rows, 8 MiB of encoded input per batch, and 64 MiB of encoded input
+  per run, with typed `ScenarioLimitError` diagnostics. These are not in the
+  published 0.2.0a1 package.
+
+### Documentation
+
+- Record the Spark 3.5/4.2 deadline feasibility no-go. No runner or pytest
+  `timeout`/`deadline` argument is offered: a timed wait cannot guarantee
+  query cancellation or cleanup. See [ADR 0006](docs/design/0006-spark-deadline-feasibility.md).
+
 ## [0.2.0a1] - 2026-10-24
 
 This alpha was published on PyPI on 2026-10-24. It adds progress and state
