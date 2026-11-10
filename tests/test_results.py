@@ -7,7 +7,7 @@ from decimal import Decimal
 
 import pytest
 
-from streamcase import CapturedBatch, CapturedProgress, ScenarioResult
+from streamcase import CapturedBatch, CapturedProgress, FailureObservation, ScenarioResult
 
 
 def test_captured_batch_recursively_snapshots_and_freezes_rows() -> None:
@@ -118,7 +118,34 @@ def test_scenario_result_allows_zero_batches() -> None:
 
     assert result.batches == ()
     assert result.progress == ()
+    assert result.failure is None
     assert result.rows == ()
+
+
+def test_scenario_result_keeps_partial_batches_progress_and_failure_in_order() -> None:
+    first = CapturedBatch(2, [{"id": 1}])
+    second = CapturedBatch(3, [{"id": 2}])
+    trigger = CapturedProgress(0, 0, 2, "run-1", num_input_rows=1)
+    failure = FailureObservation(2, message="bad input", condition="CAST_INVALID_INPUT")
+    batches = [first, second]
+    progress = [trigger]
+
+    result = ScenarioResult(batches, progress=progress, failure=failure)
+    batches.clear()
+    progress.clear()
+
+    assert result.batches == (first, second)
+    assert result.rows == ({"id": 1}, {"id": 2})
+    assert result.progress == (trigger,)
+    assert result.failure is failure
+    assert result != ScenarioResult([first, second], progress=[trigger])
+    with pytest.raises(FrozenInstanceError):
+        result.failure = None  # type: ignore[misc]
+
+
+def test_scenario_result_rejects_raw_or_wrong_failure_object() -> None:
+    with pytest.raises(TypeError, match="failure must be a FailureObservation or None"):
+        ScenarioResult([], failure=RuntimeError("raw exception"))  # type: ignore[arg-type]
 
 
 def test_scenario_result_snapshots_optional_progress() -> None:

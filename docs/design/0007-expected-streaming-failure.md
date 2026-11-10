@@ -1,6 +1,6 @@
 # ADR 0007: Explicit expected streaming failures
 
-- Status: Proposed for 0.3.0a1; design only, not yet implemented
+- Status: Accepted for phased implementation in 0.3.0a1; runner execution not yet implemented
 - Decision scope: Phase 8
 - Related issue: #172
 
@@ -98,12 +98,18 @@ The action index is the `ExpectFailure` wrapper's index, including any prior
 `Restart`. `kind` describes the observed event, not the underlying root cause.
 `condition` is the top-level query condition when available, otherwise `None`.
 It is observational metadata, not a promise that the same condition will be
-emitted by every Spark version. `message` is a plain-text, bounded diagnostic
-snapshot; `truncated` states whether text was omitted. Issue #174 fixes the
-exact bound and normalization. The object contains no raw exception, traceback,
-DataFrame, query, JVM handle, or mutable Spark collection. Exception text can
-still contain sensitive user data; tests should use synthetic inputs and must
-not treat this field as a redaction mechanism.
+emitted by every Spark version. `message` is a plain-text diagnostic snapshot
+capped at 1,024 Unicode code points after CRLF and CR normalization to LF;
+`truncated` states whether text was omitted. The top-level `condition`, when
+present, is capped at 256 characters and is rejected rather than truncated if
+oversized. `message` is excluded from automatic object `repr`, but remains
+directly accessible. The model accepts plain text only and does not traverse
+nested exception causes. The runner will decide how to extract the top-level
+query text; it must not copy arbitrary traceback objects into the result. The
+object contains no raw exception, traceback, DataFrame, query, JVM handle, or
+mutable Spark collection. Exception text can still contain sensitive user
+data; tests should use synthetic inputs and must not treat this field as a
+redaction mechanism.
 
 `ScenarioResult.batches`, `.rows`, and `.progress` retain their existing
 meaning. On a matched failure, they contain only **fully completed** captured

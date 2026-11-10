@@ -74,21 +74,43 @@ the captured batch.
 
 ### ScenarioResult
 
-`ScenarioResult(batches, progress=())` snapshots captured batches and progress
-in execution order and may be empty. It exposes:
+`ScenarioResult(batches, progress=(), failure=None)` snapshots captured batches
+and progress in execution order and may be empty. It exposes:
 
 - `result.batches`: captured batches in execution order;
 - `result.rows`: all captured rows flattened in batch and row order.
 - `result.progress`: immutable, callback-backed progress snapshots in
   observation order, independent of output batches.
+- `result.failure`: `None` for ordinary successful runs, or an immutable
+  `FailureObservation` for a future matched negative run.
+
+In current source checkouts, tests may construct a `FailureObservation`
+directly, but the Spark runner does not return one yet. It still raises
+`NotImplementedError` for `ExpectFailure` scenarios until issue #175.
+`FailureObservation(action_index, message=..., condition=None)` records a
+zero-based action index, fixed `kind="query_terminated"`, optional top-level
+condition, and diagnostic text. The text is normalized to LF line endings and
+truncated after 1,024 Unicode code points. `truncated` reports that omission;
+the condition is capped at 256 characters and is never fabricated when absent.
+Automatic `repr` hides the text, but accessing `message` can reveal sensitive
+user data: truncation is **not** redaction. No raw Spark object, exception, or
+nested cause is retained. A future runner will raise the distinct
+`ExpectedFailureNotObservedError` rather than return a result if the declared
+failure does not happen.
+
+For a matched failure, the model can hold only fully completed captured batches
+and progress in their original order; it makes no claim about incomplete
+callbacks or progress from the failed action. See the
+[expected-failure design](design/0007-expected-streaming-failure.md) for the
+pending runner contract.
 
 Batch identifiers do not need to be consecutive. The runner owns their
 relationship to Spark micro-batch identifiers, including across restarts.
 For input-row, watermark, and state-operator assertions, see the
 [progress guide](progress-and-state-assertions.md).
 
-Both models are frozen, use stable value equality, and contain no Spark or JVM
-objects.
+These result models are frozen, use stable value equality, and contain no Spark
+or JVM objects.
 
 ## Row equality
 

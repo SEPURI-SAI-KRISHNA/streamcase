@@ -8,6 +8,7 @@ from datetime import date
 from decimal import Decimal
 from types import MappingProxyType
 
+from streamcase.failures import FailureObservation
 from streamcase.progress import CapturedProgress
 
 
@@ -67,10 +68,11 @@ class CapturedBatch:
 
 @dataclass(frozen=True, slots=True, init=False)
 class ScenarioResult:
-    """Immutable snapshots of captured output batches and optional progress."""
+    """Immutable snapshots of output, progress, and an optional query failure."""
 
     batches: tuple[CapturedBatch, ...]
     progress: tuple[CapturedProgress, ...]
+    failure: FailureObservation | None
     _rows: tuple[Mapping[str, object], ...] = field(repr=False, compare=False)
 
     def __init__(
@@ -78,6 +80,7 @@ class ScenarioResult:
         batches: Iterable[CapturedBatch],
         *,
         progress: Iterable[CapturedProgress] = (),
+        failure: FailureObservation | None = None,
     ) -> None:
         """Snapshot captured batches and progress in their observation order."""
         snapshot = tuple(batches)
@@ -98,9 +101,17 @@ class ScenarioResult:
                 )
                 raise TypeError(message)
 
+        if failure is not None and not isinstance(failure, FailureObservation):
+            message = (
+                "Scenario result failure must be a FailureObservation or None; "
+                f"got {type(failure).__name__}."
+            )
+            raise TypeError(message)
+
         rows = tuple(row for captured_batch in snapshot for row in captured_batch.rows)
         object.__setattr__(self, "batches", snapshot)
         object.__setattr__(self, "progress", progress_snapshot)
+        object.__setattr__(self, "failure", failure)
         object.__setattr__(self, "_rows", rows)
 
     @property
