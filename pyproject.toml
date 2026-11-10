@@ -136,6 +136,7 @@ pythonpath = ["."]
 testpaths = ["tests"]
 markers = [
   "spark: integration tests that require PySpark and a compatible Java runtime",
+  "deadline_probe: guarded investigation of Spark query deadline behavior",
 ]
 
 [tool.coverage.run]
