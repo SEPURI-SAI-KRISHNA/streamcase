@@ -28,10 +28,18 @@ def _run_managed_batches(
     output_mode: str = "append",
     query_options: Mapping[str, str] | None = None,
     max_output_rows: int | None = 10_000,
+    max_input_bytes_per_batch: int | None = 8_388_608,
+    max_input_bytes_per_run: int | None = 67_108_864,
 ) -> ScenarioResult:
     """Own run directories while a caller-owned session builds the stream."""
     approved_mode, approved_options = _prepare_query_configuration(output_mode, query_options)
     approved_max_output_rows = _validate_positive_limit("max_output_rows", max_output_rows)
+    approved_batch_bytes = _validate_positive_limit(
+        "max_input_bytes_per_batch", max_input_bytes_per_batch
+    )
+    approved_run_bytes = _validate_positive_limit(
+        "max_input_bytes_per_run", max_input_bytes_per_run
+    )
     directories = create_run_directories(base_dir=base_dir, retain_artifacts=retain_artifacts)
     with _cleanup_on_exit("run directory", directories.cleanup):
         stream = build_stream(directories)
@@ -43,4 +51,6 @@ def _run_managed_batches(
             output_mode=approved_mode,
             query_options=approved_options,
             rebuild_stream=lambda: build_stream(directories),
+            max_input_bytes_per_batch=approved_batch_bytes,
+            max_input_bytes_per_run=approved_run_bytes,
         )

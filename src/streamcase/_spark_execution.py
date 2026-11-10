@@ -12,6 +12,7 @@ from streamcase._spark_capture import _BatchCapture
 from streamcase._spark_lifecycle import _QueryLifecycle
 from streamcase._spark_progress import _capture_action_progress
 from streamcase.actions import Batch, Restart
+from streamcase.limits import ScenarioLimitError
 from streamcase.progress import CapturedProgress
 from streamcase.results import ScenarioResult
 from streamcase.scenario import Scenario
@@ -32,7 +33,7 @@ def _process_batch_action(
         query = lifecycle.require_active()
         progress_before = tuple(query.recentProgress)
         captured_before = len(capture.snapshot())
-        input_writer.publish(action)
+        input_writer.publish(action, action_index=index)
         query.processAllAvailable()
         lifecycle.require_active()
         return _capture_action_progress(
@@ -43,10 +44,10 @@ def _process_batch_action(
             str(query.runId),
         )
     except Exception as error:
+        if isinstance(error, ScenarioLimitError):
+            raise
         limit_error = capture.limit_error()
         if limit_error is not None:
-            if error is limit_error:
-                raise
             raise limit_error from error
         raise RuntimeError(f"Batch action at index {index} failed: {error}") from error
 
@@ -90,6 +91,8 @@ def _execute_batches(
     output_mode: str = "append",
     query_options: Mapping[str, str] | None = None,
     rebuild_stream: Callable[[], DataFrame] | None = None,
+    max_input_bytes_per_batch: int | None = 8_388_608,
+    max_input_bytes_per_run: int | None = 67_108_864,
 ) -> ScenarioResult:
     """Execute each action and return an immutable output snapshot."""
     if rebuild_stream is None and any(isinstance(action, Restart) for action in scenario.actions):
@@ -104,7 +107,11 @@ def _execute_batches(
     with _cleanup_on_exit("streaming query", lifecycle.stop):
         capture.set_action_index(0)
         lifecycle.start(stream, action_index=0)
-        input_writer = AtomicBatchWriter(directories)
+        input_writer = AtomicBatchWriter(
+            directories,
+            max_input_bytes_per_batch=max_input_bytes_per_batch,
+            max_input_bytes_per_run=max_input_bytes_per_run,
+        )
         progress: list[CapturedProgress] = []
         for index, action in enumerate(scenario.actions):
             if isinstance(action, Batch):

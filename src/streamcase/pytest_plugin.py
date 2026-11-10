@@ -31,6 +31,8 @@ def streamcase_runner(tmp_path: Path) -> Callable[..., ScenarioResult]:
         query_options: Mapping[str, str] | None = None,
         retain_artifacts: bool = False,
         max_output_rows: int | None = 10_000,
+        max_input_bytes_per_batch: int | None = 8_388_608,
+        max_input_bytes_per_run: int | None = 67_108_864,
     ) -> ScenarioResult:
         from streamcase.spark import run_scenario
 
@@ -45,6 +47,8 @@ def streamcase_runner(tmp_path: Path) -> Callable[..., ScenarioResult]:
             base_dir=tmp_path,
             retain_artifacts=retain_artifacts,
             max_output_rows=max_output_rows,
+            max_input_bytes_per_batch=max_input_bytes_per_batch,
+            max_input_bytes_per_run=max_input_bytes_per_run,
         )
 
     return run

@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 
 from streamcase.actions import Batch
 
 
-def _encode_batch_json_lines(action: Batch) -> str:
-    """Encode a batch as deterministic, newline-terminated JSON Lines text."""
-    lines: list[str] = []
+def _iter_batch_json_lines(action: Batch) -> Iterator[tuple[int, str]]:
+    """Encode each row independently, preserving JSON Lines row context."""
     for row_index, row in enumerate(action.rows):
         try:
             encoded = json.dumps(
@@ -26,6 +26,9 @@ def _encode_batch_json_lines(action: Batch) -> str:
             message = f"Batch row at index {row_index} could not be encoded as JSON: {error}"
             raise ValueError(message) from error
 
-        lines.append(encoded)
+        yield row_index, encoded + "\n"
 
-    return "\n".join(lines) + "\n"
+
+def _encode_batch_json_lines(action: Batch) -> str:
+    """Encode a batch as deterministic, newline-terminated JSON Lines text."""
+    return "".join(line for _, line in _iter_batch_json_lines(action))

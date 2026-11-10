@@ -221,3 +221,32 @@ def test_invalid_query_configuration_fails_before_directory_or_stream_creation(
         )
 
     assert list(tmp_path.glob("streamcase-run-*")) == []
+
+
+@pytest.mark.parametrize(
+    ("limit_name", "invalid", "error_type"),
+    [
+        ("max_input_bytes_per_batch", True, TypeError),
+        ("max_input_bytes_per_batch", 0, ValueError),
+        ("max_input_bytes_per_run", False, TypeError),
+        ("max_input_bytes_per_run", -1, ValueError),
+    ],
+)
+def test_invalid_input_limit_fails_before_directory_or_stream_creation(
+    tmp_path: Path,
+    limit_name: str,
+    invalid: object,
+    error_type: type[Exception],
+) -> None:
+    def unexpected_build(_directories: RunDirectories) -> Any:
+        pytest.fail("stream builder was called")
+
+    with pytest.raises(error_type, match=f"{limit_name} must be a positive integer or None"):
+        _run_managed_batches(
+            scenario(batch({"id": 1})),
+            unexpected_build,
+            base_dir=tmp_path,
+            **{limit_name: cast(Any, invalid)},
+        )
+
+    assert list(tmp_path.glob("streamcase-run-*")) == []

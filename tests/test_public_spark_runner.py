@@ -134,6 +134,8 @@ def test_public_runner_composes_validated_source_and_managed_execution(
         base_dir=tmp_path,
         retain_artifacts=True,
         max_output_rows=7,
+        max_input_bytes_per_batch=512,
+        max_input_bytes_per_run=1024,
     )
 
     assert result is sentinel
@@ -151,6 +153,8 @@ def test_public_runner_composes_validated_source_and_managed_execution(
             "output_mode": "update",
             "query_options": {"customWriterOption": "yes"},
             "max_output_rows": 7,
+            "max_input_bytes_per_batch": 512,
+            "max_input_bytes_per_run": 1024,
         }
     ]
     assert caller_source_options == {"timestampFormat": "yyyy-MM-dd"}
@@ -219,6 +223,38 @@ def test_invalid_output_limit_fails_before_managed_execution(
             schema="id LONG",
             transform=lambda frame: frame,
             max_output_rows=invalid,
+        )
+
+
+@pytest.mark.parametrize(
+    ("name", "invalid", "error_type"),
+    [
+        ("max_input_bytes_per_batch", True, TypeError),
+        ("max_input_bytes_per_batch", 0, ValueError),
+        ("max_input_bytes_per_batch", "8", TypeError),
+        ("max_input_bytes_per_run", False, TypeError),
+        ("max_input_bytes_per_run", -1, ValueError),
+        ("max_input_bytes_per_run", 1.5, TypeError),
+    ],
+)
+def test_invalid_input_limits_fail_before_managed_execution(
+    spark_api: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    name: str,
+    invalid: object,
+    error_type: type[Exception],
+) -> None:
+    def unexpected_managed(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("managed execution was called")
+
+    monkeypatch.setattr(spark_api, "_run_managed_batches", unexpected_managed)
+    with pytest.raises(error_type, match=f"{name} must be a positive integer or None"):
+        spark_api.run_scenario(
+            _FakeSparkSession(),
+            scenario(batch({"id": 1})),
+            schema="id LONG",
+            transform=lambda frame: frame,
+            **{name: invalid},
         )
 
 

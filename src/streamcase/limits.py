@@ -18,15 +18,19 @@ class ScenarioLimitError(RuntimeError):
         limit: int,
         observed_at_least: int,
         batch_id: int | None = None,
+        row_index: int | None = None,
     ) -> None:
         self.action_index = action_index
         self.resource = resource
         self.limit = limit
         self.observed_at_least = observed_at_least
         self.batch_id = batch_id
+        self.row_index = row_index
         context = f"Batch action at index {action_index}"
         if batch_id is not None:
             context += f" (Spark batch {batch_id})"
+        if row_index is not None:
+            context += f" (input row {row_index})"
         super().__init__(
             f"{context} exceeded {resource} limit {limit}; observed at least {observed_at_least}."
         )

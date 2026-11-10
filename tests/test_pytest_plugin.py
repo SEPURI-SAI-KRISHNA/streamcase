@@ -83,6 +83,8 @@ def test_fixture_forwards_public_runner_arguments(
         query_options=query_options,
         retain_artifacts=True,
         max_output_rows=7,
+        max_input_bytes_per_batch=512,
+        max_input_bytes_per_run=1024,
     )
 
     assert result is expected
@@ -97,6 +99,8 @@ def test_fixture_forwards_public_runner_arguments(
             "base_dir": tmp_path,
             "retain_artifacts": True,
             "max_output_rows": 7,
+            "max_input_bytes_per_batch": 512,
+            "max_input_bytes_per_run": 1024,
         },
     }
 
@@ -130,4 +134,6 @@ def test_fixture_uses_public_defaults(
         "base_dir": tmp_path,
         "retain_artifacts": False,
         "max_output_rows": 10_000,
+        "max_input_bytes_per_batch": 8_388_608,
+        "max_input_bytes_per_run": 67_108_864,
     }

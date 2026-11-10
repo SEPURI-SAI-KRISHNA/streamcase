@@ -108,11 +108,12 @@ pytest's `tmp_path` for inspection during that test; pytest's retention policy
 still applies. The fixture does not expose `base_dir`. For a durable or custom
 directory, call [`run_scenario`](spark-runner.md) directly.
 
-In current source checkouts, the fixture also forwards `max_output_rows` with
-the public runner's default of 10,000. A test can pass a larger positive
-integer or `None` to opt out. See the [bounded-output contract](spark-runner.md#bounded-output-capture-in-source-checkouts)
-for limits and failure behavior. This option is not present in the published
-0.2.0a1 package used by the installation examples above.
+In current source checkouts, the fixture also forwards `max_output_rows`,
+`max_input_bytes_per_batch`, and `max_input_bytes_per_run` with the public
+runner's defaults. A test can pass larger positive integers or `None` for an
+explicit opt-out. See the [bounded-capture contract](spark-runner.md#bounded-scenario-capture-in-source-checkouts)
+for limits and failure behavior. These options are not present in the
+published 0.2.0a1 package used by the installation examples above.
 
 Core-only users can import `streamcase` and use scenario/result/assertion APIs
 without installing PySpark or registering the plugin. Registering the plugin
