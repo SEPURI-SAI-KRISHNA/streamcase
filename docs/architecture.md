@@ -45,6 +45,9 @@ The accepted [bounded capture policy](design/0005-bounded-capture-policy.md)
 defines planned 0.3.0a1 guardrails. The source runner now supports output-row,
 per-batch input-byte, and per-run input-byte limits. None of these parameters
 are available in the published 0.2.0a1 release.
+The proposed [expected-failure contract](design/0007-expected-streaming-failure.md)
+defines a terminal negative-test action and immutable failure observation for
+Phase 8. It is a design proposal, not a feature in the current runner.
 
 ## Boundaries
 
