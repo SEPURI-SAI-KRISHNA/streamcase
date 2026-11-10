@@ -120,6 +120,13 @@ the hidden temporary file is removed, and the next input filename remains
 available for a retry. The runner then follows its usual query and directory
 cleanup rules.
 
+Limit failures stop only the query started for that scenario. The caller's
+Spark session and unrelated active queries remain caller-owned. Generated run
+directories are removed by default; `retain_artifacts=True` preserves the
+run's earlier published files and checkpoints for inspection, but never a
+rejected partial input file. Stopping a query does not promise immediate
+reclamation of all Python/JVM memory or Spark-managed state.
+
 Each byte limit can be raised independently or explicitly disabled with
 `None`. Invalid values fail before run-directory creation. These limits do
 not bound the memory needed to construct a `Batch`, serialize one very large

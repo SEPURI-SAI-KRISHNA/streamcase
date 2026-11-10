@@ -6,7 +6,14 @@ from unittest.mock import Mock
 
 import pytest
 
-from streamcase import assert_batch_count, assert_rows_equal, batch, restart, scenario
+from streamcase import (
+    ScenarioLimitError,
+    assert_batch_count,
+    assert_rows_equal,
+    batch,
+    restart,
+    scenario,
+)
 from streamcase._directories import RunDirectories
 from streamcase._spark_managed import _run_managed_batches
 
@@ -250,3 +257,52 @@ def test_invalid_input_limit_fails_before_directory_or_stream_creation(
         )
 
     assert list(tmp_path.glob("streamcase-run-*")) == []
+
+
+def test_limit_error_stays_primary_when_query_and_directory_cleanup_fail(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    stream, owned_query = _fake_stream()
+    caller_query = Mock(isActive=True)
+    stream.sparkSession.streams.active = [caller_query, owned_query]
+    stop_error = OSError("injected owned-query stop failure")
+    directory_error = OSError("injected run-directory cleanup failure")
+    owned_query.stop.side_effect = stop_error
+    roots: list[RunDirectories] = []
+
+    def build_stream(directories: RunDirectories) -> Any:
+        roots.append(directories)
+        return stream
+
+    def fail_cleanup(_directories: RunDirectories) -> None:
+        raise directory_error
+
+    try:
+        with monkeypatch.context() as patch:
+            patch.setattr(RunDirectories, "cleanup", fail_cleanup)
+            with pytest.raises(ScenarioLimitError, match="Batch action at index 0") as error_info:
+                _run_managed_batches(
+                    scenario(batch({"id": 1})),
+                    build_stream,
+                    base_dir=tmp_path,
+                    max_input_bytes_per_batch=8,
+                )
+
+        failure = error_info.value
+        assert (failure.resource, failure.row_index) == ("input_bytes_per_batch", 0)
+        assert failure.__dict__["_streamcase_cleanup_failures"] == (
+            ("streaming query", stop_error),
+            ("run directory", directory_error),
+        )
+        notes = tuple(getattr(failure, "__notes__", ())) + tuple(
+            str(item) for item in failure.args[1:]
+        )
+        assert any("streaming query" in note for note in notes)
+        assert any("run directory" in note for note in notes)
+        owned_query.stop.assert_called_once_with()
+        caller_query.stop.assert_not_called()
+        stream.sparkSession.stop.assert_not_called()
+    finally:
+        for directories in roots:
+            directories.cleanup()
