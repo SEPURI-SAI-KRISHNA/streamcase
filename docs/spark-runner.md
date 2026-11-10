@@ -66,6 +66,12 @@ a runnable example, guarantees, and limits.
 Failures identify the restart action and transition; Streamcase attempts query
 and directory cleanup without replacing the original exception.
 
+The source checkout also accepts an `ExpectFailure` declaration in the core
+scenario model, but the runner deliberately raises `NotImplementedError`
+before creating run artifacts for it. Expected-failure execution is planned
+for issue #175; this API is absent from published 0.2.0a1. See the
+[declaration guide](scenario-model.md#expected-failure-declaration-source-checkout-only).
+
 `schema` is a non-empty Spark DDL string or `StructType`. `transform` receives
 the streaming JSON input DataFrame and must return a streaming DataFrame from
 the same session. The output cannot have duplicate column names, including

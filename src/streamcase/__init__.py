@@ -6,7 +6,7 @@ from streamcase._progress_assertions import (
     assert_watermark,
 )
 from streamcase._version import __version__
-from streamcase.actions import Batch, Restart, batch, restart
+from streamcase.actions import Batch, ExpectFailure, Restart, batch, expect_failure, restart
 from streamcase.assertions import assert_batch_count, assert_rows_equal, assert_unique_keys
 from streamcase.limits import ScenarioLimitError
 from streamcase.progress import CapturedProgress, CapturedStateOperator
@@ -19,6 +19,7 @@ __all__ = [
     "CapturedBatch",
     "CapturedProgress",
     "CapturedStateOperator",
+    "ExpectFailure",
     "Restart",
     "Scenario",
     "ScenarioLimitError",
@@ -31,6 +32,7 @@ __all__ = [
     "assert_unique_keys",
     "assert_watermark",
     "batch",
+    "expect_failure",
     "restart",
     "scenario",
 ]

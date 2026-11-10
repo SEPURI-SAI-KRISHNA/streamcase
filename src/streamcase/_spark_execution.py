@@ -11,7 +11,7 @@ from streamcase._input_files import AtomicBatchWriter
 from streamcase._spark_capture import _BatchCapture
 from streamcase._spark_lifecycle import _QueryLifecycle
 from streamcase._spark_progress import _capture_action_progress
-from streamcase.actions import Batch, Restart
+from streamcase.actions import Batch, ExpectFailure, Restart
 from streamcase.limits import ScenarioLimitError
 from streamcase.progress import CapturedProgress
 from streamcase.results import ScenarioResult
@@ -19,6 +19,14 @@ from streamcase.scenario import Scenario
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
+
+
+def _reject_unimplemented_expected_failure(scenario: Scenario) -> None:
+    """Do not mistake a declared query failure for a restart before Phase 8 execution."""
+    if any(isinstance(action, ExpectFailure) for action in scenario.actions):
+        raise NotImplementedError(
+            "Expected-failure execution is not available yet; issue #175 adds runner support."
+        )
 
 
 def _process_batch_action(
@@ -95,6 +103,7 @@ def _execute_batches(
     max_input_bytes_per_run: int | None = 67_108_864,
 ) -> ScenarioResult:
     """Execute each action and return an immutable output snapshot."""
+    _reject_unimplemented_expected_failure(scenario)
     if rebuild_stream is None and any(isinstance(action, Restart) for action in scenario.actions):
         raise ValueError("Restart actions require a stream rebuild callback.")
 

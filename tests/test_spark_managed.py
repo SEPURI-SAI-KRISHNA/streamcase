@@ -11,11 +11,25 @@ from streamcase import (
     assert_batch_count,
     assert_rows_equal,
     batch,
+    expect_failure,
     restart,
     scenario,
 )
 from streamcase._directories import RunDirectories
 from streamcase._spark_managed import _run_managed_batches
+
+
+def test_managed_run_rejects_unimplemented_expected_failure_before_side_effects(
+    tmp_path: Path,
+) -> None:
+    build_stream = Mock()
+    declared = scenario(expect_failure(batch({"id": 1}), message_contains="bad-input"))
+
+    with pytest.raises(NotImplementedError, match="issue #175"):
+        _run_managed_batches(declared, build_stream, base_dir=tmp_path)
+
+    build_stream.assert_not_called()
+    assert list(tmp_path.iterdir()) == []
 
 
 def _fake_stream() -> tuple[Mock, Mock]:
