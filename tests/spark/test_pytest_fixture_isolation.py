@@ -8,7 +8,15 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from streamcase import ScenarioResult, assert_rows_equal, batch, scenario
+from streamcase import (
+    ScenarioLimitError,
+    ScenarioResult,
+    assert_rows_equal,
+    batch,
+    restart,
+    scenario,
+)
+from streamcase._directories import RunDirectories
 
 if TYPE_CHECKING:
     from pyspark.sql import SparkSession
@@ -153,3 +161,137 @@ def test_failed_calls_clean_runner_resources_but_keep_caller_resources(
     assert caller_query.isActive
     assert caller_file.read_text(encoding="utf-8") == "preserve me"
     assert spark.range(1).count() == 1
+
+
+@pytest.mark.parametrize(
+    ("failure_kind", "retain_artifacts", "expected_resource", "expected_files"),
+    [
+        ("input_before_processing", True, "input_bytes_per_batch", 0),
+        ("output_after_first_batch", True, "output_rows", 2),
+        ("output_after_first_batch", False, "output_rows", 2),
+        ("input_after_restart", True, "input_bytes_per_run", 1),
+    ],
+)
+def test_limit_failures_keep_caller_query_and_isolate_artifacts(
+    failure_kind: str,
+    retain_artifacts: bool,
+    expected_resource: str,
+    expected_files: int,
+    caller_resources: tuple[SparkSession, StreamingQuery],
+    streamcase_runner: Callable[..., ScenarioResult],
+    tmp_path: Path,
+) -> None:
+    spark, caller_query = caller_resources
+    active_before = _active_run_ids(spark)
+    assert caller_query.runId in active_before
+
+    if failure_kind == "input_before_processing":
+        steps = scenario(batch({"id": 1}))
+        options = {"max_input_bytes_per_batch": 8}
+        expected_action_index = 0
+    elif failure_kind == "output_after_first_batch":
+        steps = scenario(batch({"id": 1}), batch({"id": 2}))
+        options = {"max_output_rows": 1}
+        expected_action_index = 1
+    else:
+        steps = scenario(batch({"id": 1}), restart(), batch({"id": 2}))
+        options = {"max_input_bytes_per_run": 9}
+        expected_action_index = 2
+
+    with pytest.raises(ScenarioLimitError) as error_info:
+        streamcase_runner(
+            spark,
+            steps,
+            schema="id LONG",
+            transform=lambda source: source.selectExpr("id"),
+            retain_artifacts=retain_artifacts,
+            **options,
+        )
+
+    failure = error_info.value
+    assert (failure.resource, failure.action_index) == (
+        expected_resource,
+        expected_action_index,
+    )
+    roots = list(tmp_path.glob("streamcase-run-*"))
+    if retain_artifacts:
+        assert len(roots) == 1
+        input_files = sorted((roots[0] / "input").iterdir())
+        assert len(input_files) == expected_files
+        assert all(
+            path.name.startswith("batch-") and path.suffix == ".json" for path in input_files
+        )
+        assert [path.read_bytes() for path in input_files] == [
+            b'{"id":1}\n',
+            b'{"id":2}\n',
+        ][:expected_files]
+    else:
+        assert roots == []
+    assert _active_run_ids(spark) == active_before
+    assert caller_query.isActive
+    assert spark.range(1).count() == 1
+
+
+def test_invalid_input_limit_has_no_query_or_directory_side_effects(
+    caller_resources: tuple[SparkSession, StreamingQuery],
+    streamcase_runner: Callable[..., ScenarioResult],
+    tmp_path: Path,
+) -> None:
+    spark, caller_query = caller_resources
+    active_before = _active_run_ids(spark)
+
+    with pytest.raises(ValueError, match="max_input_bytes_per_batch"):
+        streamcase_runner(
+            spark,
+            scenario(batch({"id": 1})),
+            schema="id LONG",
+            transform=lambda source: source,
+            max_input_bytes_per_batch=0,
+        )
+
+    assert list(tmp_path.glob("streamcase-run-*")) == []
+    assert _active_run_ids(spark) == active_before
+    assert caller_query.isActive
+
+
+def test_limit_error_remains_primary_if_directory_cleanup_fails(
+    caller_resources: tuple[SparkSession, StreamingQuery],
+    streamcase_runner: Callable[..., ScenarioResult],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    spark, caller_query = caller_resources
+    active_before = _active_run_ids(spark)
+    cleanup_error = OSError("injected run-directory cleanup failure")
+    captured_directories: list[RunDirectories] = []
+
+    def fail_cleanup(directories: RunDirectories) -> None:
+        captured_directories.append(directories)
+        raise cleanup_error
+
+    try:
+        with monkeypatch.context() as patch:
+            patch.setattr(RunDirectories, "cleanup", fail_cleanup)
+            with pytest.raises(ScenarioLimitError) as error_info:
+                streamcase_runner(
+                    spark,
+                    scenario(batch({"id": 1}), batch({"id": 2})),
+                    schema="id LONG",
+                    transform=lambda source: source.selectExpr("id"),
+                    max_output_rows=1,
+                )
+
+        failure = error_info.value
+        assert (failure.resource, failure.action_index) == ("output_rows", 1)
+        assert failure.__dict__["_streamcase_cleanup_failures"] == (
+            ("run directory", cleanup_error),
+        )
+        assert len(captured_directories) == 1
+        assert captured_directories[0].root.parent == tmp_path.resolve()
+        assert captured_directories[0].root.is_dir()
+        assert _active_run_ids(spark) == active_before
+        assert caller_query.isActive
+        assert spark.range(1).count() == 1
+    finally:
+        for directories in captured_directories:
+            directories.cleanup()
