@@ -105,4 +105,21 @@ jobs:
       - name: Run Spark integration tests from installed wheel
         run: |
           export PYSPARK_PYTHON="$PWD/.tmp/smoke-spark-wheel/bin/python"
-          .tmp/smoke-spark-wheel/bin/python -m pytest -m spark -v
+          .tmp/smoke-spark-wheel/bin/python -m pytest -m "spark and not deadline_probe" -v
+
+      - name: Probe public Spark deadline semantics
+        run: |
+          set -o pipefail
+          export PYSPARK_PYTHON="$PWD/.tmp/smoke-spark-wheel/bin/python"
+          mkdir -p .tmp/deadline-probe
+          timeout --signal=TERM --kill-after=10s 180s \
+            .tmp/smoke-spark-wheel/bin/python -m pytest -m deadline_probe -q -s |
+            tee .tmp/deadline-probe/observations.txt
+
+      - name: Preserve deadline probe observations
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spark-deadline-probe-${{ matrix.spark_minor }}
+          path: .tmp/deadline-probe/observations.txt
+          if-no-files-found: warn
