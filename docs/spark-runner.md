@@ -138,3 +138,23 @@ failure contract.
 These three limit options are **not in the published 0.2.0a1 package**
 installed in the quick start above. They will first be available in a later
 prerelease after the bounded-runner work passes the supported Spark CI lanes.
+
+## Execution-time limitation
+
+Neither the published 0.2.0a1 runner nor the current source checkout provides
+a per-action `timeout` or `deadline` parameter. The capture and input-byte
+allowances above bound retained rows and published input files, **not** how
+long Spark takes to process an action. `processAllAvailable()` is a blocking
+testing barrier; it can remain blocked when data keeps arriving or a callback
+does not finish. Streamcase cannot promise to return by a wall-clock deadline
+or to finish query cleanup by one. Its normal cleanup runs when control
+returns or an exception is raised; an action that never returns prevents that
+path from running.
+
+The [cross-line deadline assessment](design/0006-spark-deadline-feasibility.md)
+records why a Python timer or `awaitTermination(timeout)` is not safe action
+cancellation. Its guarded Spark 3.5.9 and 4.2.1 probes showed a timer firing
+while `processAllAvailable()` remained blocked. A separate test process with
+an external watchdog may bound the *test process's* lifetime, but forcefully
+ending it does not provide graceful Spark-query cleanup or preserve a
+caller-owned session. Streamcase does not ship that as a runner feature.

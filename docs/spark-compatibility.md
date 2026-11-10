@@ -16,6 +16,14 @@ Python 3.10, 3.12, or 3.13 passing the core suite does not establish Spark
 runner compatibility on those versions. An extra may install on them, but the
 runner support claim covers only the complete combinations tested in CI.
 
+The current source checkout adds bounded output-row and input-byte capture
+for a future prerelease. It does **not** add a per-action deadline on either
+supported Spark line. The [cross-line deadline assessment](design/0006-spark-deadline-feasibility.md)
+records passing guarded probes on PySpark 3.5.9 and 4.2.1, but a cooperative
+local stop is not a bounded-cancellation guarantee. The 0.3.0a1 release plan
+therefore excludes a public runner or pytest `timeout` parameter. The
+published 0.2.0a1 package has neither the new capture limits nor a deadline.
+
 The path-filtered Spark workflow runs on runner, packaging, compatibility-policy,
 smoke-check, and Spark-test changes. For each supported line, it builds both
 distributions, installs `pytest` with exactly one matching Spark extra in clean
