@@ -6,9 +6,9 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import TypeAlias
 
-from streamcase.actions import Batch, Restart
+from streamcase.actions import Batch, ExpectFailure, Restart
 
-Action: TypeAlias = Batch | Restart
+Action: TypeAlias = Batch | Restart | ExpectFailure
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -16,6 +16,7 @@ class Scenario:
     """A non-empty, ordered sequence of supported scenario actions.
 
     Restart actions must appear between batch actions and cannot be consecutive.
+    At most one ExpectFailure may appear, and it must be terminal.
     """
 
     actions: tuple[Action, ...]
@@ -27,12 +28,26 @@ class Scenario:
             raise ValueError("Scenario must contain at least one action.")
 
         for index, action in enumerate(snapshot):
-            if not isinstance(action, (Batch, Restart)):
+            if not isinstance(action, (Batch, Restart, ExpectFailure)):
                 message = (
-                    f"Scenario action at index {index} must be a Batch or Restart; "
+                    f"Scenario action at index {index} must be a Batch, Restart, "
+                    "or ExpectFailure; "
                     f"got {type(action).__name__}."
                 )
                 raise TypeError(message)
+
+        expected_indices = [
+            index for index, action in enumerate(snapshot) if isinstance(action, ExpectFailure)
+        ]
+        if len(expected_indices) > 1:
+            raise ValueError(
+                "Scenario may contain at most one ExpectFailure action; "
+                f"found another at index {expected_indices[1]}."
+            )
+        if expected_indices and expected_indices[0] != len(snapshot) - 1:
+            raise ValueError(
+                f"Scenario ExpectFailure action at index {expected_indices[0]} must be last."
+            )
 
         if isinstance(snapshot[0], Restart):
             raise ValueError("Scenario Restart action at index 0 cannot be first.")

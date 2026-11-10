@@ -23,9 +23,10 @@ assert len(order_lifecycle.actions) == 3
 ```
 
 The factories return the immutable public `Batch`, `Restart`, and `Scenario`
-types. The `Action` type alias represents `Batch | Restart`. These names are
-exported from `streamcase`; serialization helpers and runner components remain
-private.
+types. In source checkouts after issue #173, `ExpectFailure` is also a public
+declaration type; it does not execute yet. The `Action` type alias represents
+`Batch | Restart | ExpectFailure`. These names are exported from `streamcase`;
+serialization helpers and runner components remain private.
 
 ## Batch contract
 
@@ -56,8 +57,8 @@ raises `TypeError` and reports the zero-based row index and offending key type.
 ## Scenario contract
 
 `scenario(*actions)` snapshots a non-empty ordered sequence containing only
-`Batch` and `Restart` actions. The scenario container is frozen and has stable
-value equality.
+`Batch`, `Restart`, and `ExpectFailure` actions. The scenario container is
+frozen and has stable value equality.
 
 A restart represents a stop and start of the same transformed streaming
 query with the same checkpoint. It must be surrounded by batches:
@@ -72,8 +73,41 @@ invalid: Batch -> Restart -> Restart -> Batch
 
 Leading, trailing, and consecutive restarts raise `ValueError` with the invalid
 zero-based action index. An empty scenario raises `ValueError`. Any action that
-is not a `Batch` or `Restart` raises `TypeError` with its index and runtime
-type.
+is not one of the three supported types raises `TypeError` with its index and
+runtime type.
+
+## Expected-failure declaration (source checkout only)
+
+The accepted [Phase 8 design](design/0007-expected-streaming-failure.md)
+adds a terminal action wrapping exactly one batch:
+
+```python
+from streamcase import batch, expect_failure, restart, scenario
+
+negative_case = scenario(
+    batch({"value": "good"}),
+    restart(),
+    expect_failure(
+        batch({"value": "bad"}),
+        message_contains="INVALID_RECORD_MARKER",
+    ),
+)
+```
+
+`expect_failure` requires a `Batch` and at least one non-blank, case-sensitive
+selector: `message_contains` or `condition`. If both are supplied, both must
+match when execution support arrives. The generic Spark `STREAM_FAILED`
+condition cannot be the only selector; pair it with a distinctive message
+marker. The wrapped batch counts as one action at its own zero-based index.
+Only one expected-failure action is allowed, and it must be last. It may follow
+a `Restart`, but no action may follow it. Declaration and placement validation
+are pure Python and do not import PySpark.
+
+This source checkout **cannot run** such a scenario yet: the runner raises
+`NotImplementedError` before creating run artifacts or starting Spark. Issue
+#175 adds execution and #174 adds the result observation. Published 0.2.0a1
+does not expose `expect_failure`; existing `batch`/`restart` scenarios need no
+migration. Do not copy this source-only example into a test pinned to 0.2.0a1.
 
 ## Internal JSON Lines contract
 

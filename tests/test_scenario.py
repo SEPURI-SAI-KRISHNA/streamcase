@@ -4,7 +4,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from streamcase import Action, Scenario, batch, restart, scenario
+from streamcase import Action, ExpectFailure, Scenario, batch, expect_failure, restart, scenario
 
 
 def test_scenario_preserves_action_order() -> None:
@@ -70,3 +70,38 @@ def test_scenario_rejects_consecutive_restart_with_second_index() -> None:
             restart(),
             batch({"order_id": 2}),
         )
+
+
+def test_scenario_accepts_terminal_expected_failure_after_restart() -> None:
+    terminal = expect_failure(batch({"id": 2}), message_contains="bad-input")
+    model = scenario(batch({"id": 1}), restart(), terminal)
+
+    assert model.actions[-1] is terminal
+    assert model == Scenario((batch({"id": 1}), restart(), terminal))
+    assert isinstance(model.actions[-1], ExpectFailure)
+    with pytest.raises(FrozenInstanceError):
+        model.actions = ()  # type: ignore[misc]
+
+
+def test_scenario_accepts_only_terminal_expected_failure() -> None:
+    terminal = expect_failure(batch({"id": 1}), condition="CAST_INVALID_INPUT")
+    assert scenario(terminal).actions == (terminal,)
+
+
+def test_scenario_rejects_expected_failure_before_another_action() -> None:
+    terminal = expect_failure(batch({"id": 1}), message_contains="bad-input")
+    with pytest.raises(ValueError, match=r"ExpectFailure action at index 0 must be last"):
+        scenario(terminal, batch({"id": 2}))
+
+
+def test_scenario_rejects_restart_after_expected_failure() -> None:
+    terminal = expect_failure(batch({"id": 1}), message_contains="bad-input")
+    with pytest.raises(ValueError, match=r"ExpectFailure action at index 0 must be last"):
+        scenario(terminal, restart(), batch({"id": 2}))
+
+
+def test_scenario_rejects_duplicate_expected_failures() -> None:
+    first = expect_failure(batch({"id": 1}), message_contains="bad-input")
+    second = expect_failure(batch({"id": 2}), message_contains="bad-input")
+    with pytest.raises(ValueError, match=r"another at index 1"):
+        scenario(first, second)

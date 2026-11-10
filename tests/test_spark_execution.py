@@ -15,6 +15,7 @@ from streamcase import (
     assert_rows_equal,
     assert_unique_keys,
     batch,
+    expect_failure,
     restart,
     scenario,
 )
@@ -199,6 +200,20 @@ def test_each_batch_is_published_then_processed_in_scenario_order(
     capture.callback(cast(Any, _FakeDataFrame([_FakeRow({"id": 3})])), 2)
     assert_batch_count(result, 2)
     assert_rows_equal(result, [{"id": 1}, {"id": 2}])
+
+
+def test_executor_rejects_unimplemented_expected_failure_before_start(
+    run_directories: RunDirectories,
+) -> None:
+    query = _FakeQuery(run_directories)
+    stream = _FakeStream(query)
+    declared = scenario(expect_failure(batch({"id": 1}), condition="CAST_INVALID_INPUT"))
+
+    with pytest.raises(NotImplementedError, match="issue #175"):
+        _execute_batches(cast(Any, stream), declared, run_directories, _BatchCapture())
+
+    assert stream.writer_accesses == 0
+    assert query.stop_calls == 0
 
 
 @pytest.mark.parametrize("mode", ["complete", "update"])
