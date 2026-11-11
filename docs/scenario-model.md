@@ -23,8 +23,8 @@ assert len(order_lifecycle.actions) == 3
 ```
 
 The factories return the immutable public `Batch`, `Restart`, and `Scenario`
-types. In source checkouts after issue #173, `ExpectFailure` is also a public
-declaration type; it does not execute yet. The `Action` type alias represents
+types. In current source checkouts, `ExpectFailure` is also a public terminal
+action type. The `Action` type alias represents
 `Batch | Restart | ExpectFailure`. These names are exported from `streamcase`;
 serialization helpers and runner components remain private.
 
@@ -96,18 +96,21 @@ negative_case = scenario(
 
 `expect_failure` requires a `Batch` and at least one non-blank, case-sensitive
 selector: `message_contains` or `condition`. If both are supplied, both must
-match when execution support arrives. The generic Spark `STREAM_FAILED`
+match. The generic Spark `STREAM_FAILED`
 condition cannot be the only selector; pair it with a distinctive message
 marker. The wrapped batch counts as one action at its own zero-based index.
 Only one expected-failure action is allowed, and it must be last. It may follow
 a `Restart`, but no action may follow it. Declaration and placement validation
 are pure Python and do not import PySpark.
 
-This source checkout **cannot run** such a scenario yet: the runner raises
-`NotImplementedError` before creating run artifacts or starting Spark. Issue
-#175 adds execution and #174 adds the result observation. Published 0.2.0a1
-does not expose `expect_failure`; existing `batch`/`restart` scenarios need no
-migration. Do not copy this source-only example into a test pinned to 0.2.0a1.
+The source runner now executes the terminal batch and returns a
+`ScenarioResult.failure` observation only when its **owned query** terminates
+at that action and the selectors match. A missing failure raises
+`ExpectedFailureNotObservedError`; a different failure still fails the test.
+See the [runner guide](spark-runner.md) for cleanup and partial-result limits.
+Published 0.2.0a1 does not expose `expect_failure`; existing
+`batch`/`restart` scenarios need no migration. Do not copy this source-only
+example into a test pinned to 0.2.0a1.
 
 ## Internal JSON Lines contract
 

@@ -7,6 +7,7 @@ from unittest.mock import Mock
 import pytest
 
 from streamcase import (
+    ExpectedFailureNotObservedError,
     ScenarioLimitError,
     assert_batch_count,
     assert_rows_equal,
@@ -19,16 +20,16 @@ from streamcase._directories import RunDirectories
 from streamcase._spark_managed import _run_managed_batches
 
 
-def test_managed_run_rejects_unimplemented_expected_failure_before_side_effects(
+def test_managed_run_reports_missing_expected_failure_and_cleans_directory(
     tmp_path: Path,
 ) -> None:
-    build_stream = Mock()
+    stream, query = _fake_stream()
     declared = scenario(expect_failure(batch({"id": 1}), message_contains="bad-input"))
 
-    with pytest.raises(NotImplementedError, match="issue #175"):
-        _run_managed_batches(declared, build_stream, base_dir=tmp_path)
+    with pytest.raises(ExpectedFailureNotObservedError, match="action index 0"):
+        _run_managed_batches(declared, cast(Any, lambda _directories: stream), base_dir=tmp_path)
 
-    build_stream.assert_not_called()
+    query.stop.assert_called_once_with()
     assert list(tmp_path.iterdir()) == []
 
 
@@ -76,6 +77,20 @@ def test_managed_run_cleans_directory_when_stream_builder_fails(tmp_path: Path) 
 
     with pytest.raises(AssertionError, match="transform failed"):
         _run_managed_batches(scenario(batch({"id": 1})), build_stream, base_dir=tmp_path)
+
+    assert list(tmp_path.glob("streamcase-run-*")) == []
+
+
+def test_expected_failure_cannot_match_stream_builder_failure(tmp_path: Path) -> None:
+    def build_stream(_directories: RunDirectories) -> Any:
+        raise AssertionError("expected-marker in transform setup")
+
+    with pytest.raises(AssertionError, match="expected-marker in transform setup"):
+        _run_managed_batches(
+            scenario(expect_failure(batch({"id": 1}), message_contains="expected-marker")),
+            build_stream,
+            base_dir=tmp_path,
+        )
 
     assert list(tmp_path.glob("streamcase-run-*")) == []
 
