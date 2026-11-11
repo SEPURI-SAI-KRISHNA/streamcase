@@ -66,10 +66,17 @@ a runnable example, guarantees, and limits.
 Failures identify the restart action and transition; Streamcase attempts query
 and directory cleanup without replacing the original exception.
 
-The source checkout also accepts an `ExpectFailure` declaration in the core
-scenario model, but the runner deliberately raises `NotImplementedError`
-before creating run artifacts for it. Expected-failure execution is planned
-for issue #175; this API is absent from published 0.2.0a1. See the
+The source checkout executes a terminal `ExpectFailure` declaration from the
+core scenario model. Its wrapped `Batch` is published once at that action's
+zero-based index. A passing negative test requires the owned query to terminate
+with an exception at that action, every explicit selector to match, and query
+and directory cleanup to succeed. The result then contains a bounded
+`failure` observation plus only fully completed captured batches and prior
+progress; progress for the failed action is not promised. A missing expected
+failure raises `ExpectedFailureNotObservedError`. Input publication,
+capture-normalization, limit, restart, and cleanup errors remain test failures,
+even if their text resembles a marker. This feature is absent from published
+0.2.0a1. See the
 [declaration guide](scenario-model.md#expected-failure-declaration-source-checkout-only).
 
 `schema` is a non-empty Spark DDL string or `StructType`. `transform` receives

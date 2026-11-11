@@ -12,6 +12,11 @@ All notable changes will be documented in this file. The format is based on
   output rows, 8 MiB of encoded input per batch, and 64 MiB of encoded input
   per run, with typed `ScenarioLimitError` diagnostics. These are not in the
   published 0.2.0a1 package.
+- Source-checkout expected-failure scenarios: a terminal `ExpectFailure` batch
+  returns immutable partial captures and a bounded failure observation only
+  when the owned Spark query terminates at that action and its selectors match.
+  Missing, mismatched, capture, limit, and cleanup failures remain errors.
+  This is not in the published 0.2.0a1 package.
 
 ### Documentation
 

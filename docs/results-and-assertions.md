@@ -82,11 +82,10 @@ and progress in execution order and may be empty. It exposes:
 - `result.progress`: immutable, callback-backed progress snapshots in
   observation order, independent of output batches.
 - `result.failure`: `None` for ordinary successful runs, or an immutable
-  `FailureObservation` for a future matched negative run.
+  `FailureObservation` for a matched negative run.
 
-In current source checkouts, tests may construct a `FailureObservation`
-directly, but the Spark runner does not return one yet. It still raises
-`NotImplementedError` for `ExpectFailure` scenarios until issue #175.
+In current source checkouts, the Spark runner returns a `FailureObservation`
+when an `ExpectFailure` action matches an actual owned-query termination.
 `FailureObservation(action_index, message=..., condition=None)` records a
 zero-based action index, fixed `kind="query_terminated"`, optional top-level
 condition, and diagnostic text. The text is normalized to LF line endings and
@@ -94,7 +93,7 @@ truncated after 1,024 Unicode code points. `truncated` reports that omission;
 the condition is capped at 256 characters and is never fabricated when absent.
 Automatic `repr` hides the text, but accessing `message` can reveal sensitive
 user data: truncation is **not** redaction. No raw Spark object, exception, or
-nested cause is retained. A future runner will raise the distinct
+nested cause is retained. The runner raises the distinct
 `ExpectedFailureNotObservedError` rather than return a result if the declared
 failure does not happen.
 

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from streamcase._cleanup import _cleanup_on_exit
 from streamcase._directories import RunDirectories, create_run_directories
 from streamcase._spark_capture import _BatchCapture
-from streamcase._spark_execution import _execute_batches, _reject_unimplemented_expected_failure
+from streamcase._spark_execution import _execute_batches
 from streamcase._spark_query_options import _prepare_query_configuration
 from streamcase.limits import _validate_positive_limit
 from streamcase.results import ScenarioResult
@@ -32,7 +32,6 @@ def _run_managed_batches(
     max_input_bytes_per_run: int | None = 67_108_864,
 ) -> ScenarioResult:
     """Own run directories while a caller-owned session builds the stream."""
-    _reject_unimplemented_expected_failure(scenario)
     approved_mode, approved_options = _prepare_query_configuration(output_mode, query_options)
     approved_max_output_rows = _validate_positive_limit("max_output_rows", max_output_rows)
     approved_batch_bytes = _validate_positive_limit(

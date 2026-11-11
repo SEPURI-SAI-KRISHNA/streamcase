@@ -1,6 +1,6 @@
 # ADR 0007: Explicit expected streaming failures
 
-- Status: Accepted for phased implementation in 0.3.0a1; runner execution not yet implemented
+- Status: Accepted; runner execution implemented in source for planned 0.3.0a1
 - Decision scope: Phase 8
 - Related issue: #172
 
@@ -53,7 +53,7 @@ condition-only selectors are valid only when Spark supplies that condition on
 the owned query exception. Selectors are
 snapshotted as strings and never applied to runner-generated error messages.
 
-Illustrative public usage after the Phase 8 implementation:
+Illustrative source-checkout usage (not available in published 0.2.0a1):
 
 ```python
 from streamcase import batch, expect_failure, restart, scenario
@@ -74,8 +74,8 @@ assert result.failure.action_index == 2
 
 `reject_bad_records` is an illustrative caller-owned transformation that
 causes the query to fail with the stated marker on the second input. The code
-above describes the proposed API, not an example runnable against the current
-release. Issue #178 will provide a complete, CI-executed example.
+above describes the source API, not an example runnable against the current
+published release. Issue #178 will provide a complete, CI-executed example.
 
 ## Outcome and result shape
 

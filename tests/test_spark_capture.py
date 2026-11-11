@@ -62,9 +62,59 @@ def test_failed_conversion_does_not_publish_a_partial_batch() -> None:
         capture.callback(cast(Any, invalid_dataframe), 0)
 
     assert capture.snapshot() == ()
+    failure = capture.callback_failure()
+    assert failure is not None
+    assert failure[0] == 0
+    assert failure[1] == "capture"
+    assert isinstance(failure[2], TypeError)
 
     capture.callback(cast(Any, _FakeDataFrame(_FakeRow({"id": 1}))), 1)
     assert [batch.batch_id for batch in capture.snapshot()] == [1]
+    capture.set_action_index(2)
+    assert capture.callback_failure() is None
+
+
+def test_collect_failure_is_recorded_as_pipeline_evaluation() -> None:
+    class FailingDataFrame:
+        def collect(self) -> None:
+            raise RuntimeError("pipeline marker")
+
+    capture = _BatchCapture()
+    capture.set_action_index(3)
+
+    with pytest.raises(RuntimeError, match="pipeline marker") as error_info:
+        capture.callback(cast(Any, FailingDataFrame()), 0)
+
+    assert capture.callback_failure() == (3, "evaluation", error_info.value)
+
+
+def test_limited_collect_failure_is_recorded_as_pipeline_evaluation() -> None:
+    class FailingDataFrame:
+        def limit(self, _count: int) -> FailingDataFrame:
+            return self
+
+        def collect(self) -> None:
+            raise RuntimeError("pipeline marker")
+
+    capture = _BatchCapture(max_output_rows=1)
+
+    with pytest.raises(RuntimeError, match="pipeline marker") as error_info:
+        capture.callback(cast(Any, FailingDataFrame()), 0)
+
+    assert capture.callback_failure() == (0, "evaluation", error_info.value)
+
+
+def test_limit_construction_failure_is_not_pipeline_evaluation() -> None:
+    class FailingDataFrame:
+        def limit(self, _count: int) -> None:
+            raise RuntimeError("capture marker")
+
+    capture = _BatchCapture(max_output_rows=1)
+
+    with pytest.raises(RuntimeError, match="capture marker") as error_info:
+        capture.callback(cast(Any, FailingDataFrame()), 0)
+
+    assert capture.callback_failure() == (0, "capture", error_info.value)
 
 
 def test_limited_capture_accepts_exact_boundary_across_callbacks_and_empty_output() -> None:
@@ -105,6 +155,7 @@ def test_overflow_collects_only_allowance_plus_one_and_publishes_no_partial_batc
     assert capture.snapshot()[0].rows == ({"id": 1},)
     assert len(capture.snapshot()) == 1
     assert capture.limit_error() is error
+    assert capture.callback_failure() == (4, "capture", error)
 
 
 def test_zero_remaining_allows_an_empty_callback_but_rejects_one_more_row() -> None:

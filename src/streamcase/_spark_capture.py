@@ -5,7 +5,7 @@ from __future__ import annotations
 from _thread import LockType
 from dataclasses import dataclass, field
 from threading import Lock
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from streamcase.limits import ScenarioLimitError, _validate_positive_limit
 from streamcase.results import CapturedBatch
@@ -24,6 +24,9 @@ class _BatchCapture:
     _captured_rows: int = field(default=0, init=False, repr=False)
     _action_index: int = field(default=0, init=False, repr=False)
     _limit_error: ScenarioLimitError | None = field(default=None, init=False, repr=False)
+    _callback_failure: tuple[int, Literal["evaluation", "capture"], Exception] | None = field(
+        default=None, init=False, repr=False
+    )
 
     def __post_init__(self) -> None:
         self.max_output_rows = _validate_positive_limit("max_output_rows", self.max_output_rows)
@@ -32,34 +35,52 @@ class _BatchCapture:
         """Identify the action whose query callback is about to run."""
         with self._lock:
             self._action_index = index
+            self._callback_failure = None
 
     def limit_error(self) -> ScenarioLimitError | None:
         """Return a callback overflow even if Spark wraps its exception."""
         with self._lock:
             return self._limit_error
 
+    def callback_failure(
+        self,
+    ) -> tuple[int, Literal["evaluation", "capture"], Exception] | None:
+        """Return private callback failure provenance, including Spark-wrapped errors."""
+        with self._lock:
+            return self._callback_failure
+
     def callback(self, dataframe: DataFrame, batch_id: int) -> None:
         """Collect and freeze one Spark output micro-batch on the driver."""
         with self._lock:
-            if self.max_output_rows is None:
-                collected = dataframe.collect()
-            else:
-                remaining = self.max_output_rows - self._captured_rows
-                collected = dataframe.limit(remaining + 1).collect()
-                if len(collected) > remaining:
-                    error = ScenarioLimitError(
-                        action_index=self._action_index,
-                        resource="output_rows",
-                        limit=self.max_output_rows,
-                        observed_at_least=self._captured_rows + len(collected),
-                        batch_id=batch_id,
-                    )
-                    self._limit_error = error
-                    raise error
-            rows = (row.asDict(recursive=True) for row in collected)
-            captured = CapturedBatch(batch_id, rows)
-            self._batches.append(captured)
-            self._captured_rows += len(collected)
+            phase: Literal["evaluation", "capture"] = "capture"
+            try:
+                if self.max_output_rows is None:
+                    phase = "evaluation"
+                    collected = dataframe.collect()
+                else:
+                    remaining = self.max_output_rows - self._captured_rows
+                    limited = dataframe.limit(remaining + 1)
+                    phase = "evaluation"
+                    collected = limited.collect()
+                    phase = "capture"
+                    if len(collected) > remaining:
+                        error = ScenarioLimitError(
+                            action_index=self._action_index,
+                            resource="output_rows",
+                            limit=self.max_output_rows,
+                            observed_at_least=self._captured_rows + len(collected),
+                            batch_id=batch_id,
+                        )
+                        self._limit_error = error
+                        raise error
+                phase = "capture"
+                rows = (row.asDict(recursive=True) for row in collected)
+                captured = CapturedBatch(batch_id, rows)
+                self._batches.append(captured)
+                self._captured_rows += len(collected)
+            except Exception as error:
+                self._callback_failure = (self._action_index, phase, error)
+                raise
 
     def snapshot(self) -> tuple[CapturedBatch, ...]:
         """Return an immutable snapshot after any active callback completes."""

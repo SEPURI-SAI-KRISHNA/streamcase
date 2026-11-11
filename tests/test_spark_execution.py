@@ -4,11 +4,13 @@ import json
 from collections.abc import Iterator
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import pytest
 
 from streamcase import (
+    ExpectedFailureNotObservedError,
+    FailureObservation,
     ScenarioLimitError,
     ScenarioResult,
     assert_batch_count,
@@ -21,7 +23,7 @@ from streamcase import (
 )
 from streamcase._directories import RunDirectories, create_run_directories
 from streamcase._spark_capture import _BatchCapture
-from streamcase._spark_execution import _execute_batches
+from streamcase._spark_execution import _execute_batches, _query_condition
 
 
 class _FakeRow:
@@ -53,6 +55,7 @@ class _FakeQuery:
         self.directories = directories
         self.processed: list[tuple[str, str]] = [] if processed is None else processed
         self.process_error: Exception | None = None
+        self.query_error: Exception | None = None
         self.terminate_during_processing = False
         self.isActive = True
         self.stop_calls = 0
@@ -103,6 +106,9 @@ class _FakeQuery:
         if self.stop_error is not None:
             raise self.stop_error
         self.isActive = False
+
+    def exception(self) -> Exception | None:
+        return self.query_error
 
 
 class _FakeStreamWriter:
@@ -202,18 +208,490 @@ def test_each_batch_is_published_then_processed_in_scenario_order(
     assert_rows_equal(result, [{"id": 1}, {"id": 2}])
 
 
-def test_executor_rejects_unimplemented_expected_failure_before_start(
+def test_executor_reports_missing_expected_failure_and_stops_query(
     run_directories: RunDirectories,
 ) -> None:
     query = _FakeQuery(run_directories)
     stream = _FakeStream(query)
     declared = scenario(expect_failure(batch({"id": 1}), condition="CAST_INVALID_INPUT"))
 
-    with pytest.raises(NotImplementedError, match="issue #175"):
+    with pytest.raises(ExpectedFailureNotObservedError, match="action index 0"):
         _execute_batches(cast(Any, stream), declared, run_directories, _BatchCapture())
 
-    assert stream.writer_accesses == 0
-    assert query.stop_calls == 0
+    assert stream.writer_accesses == 1
+    assert query.stop_calls == 1
+    assert query.processed == [("batch-00000000000000000000.json", '{"id":1}\n')]
+
+
+class _QueryFailureError(RuntimeError):
+    def getCondition(self) -> str:  # noqa: N802 - mirrors PySpark 4.x
+        return "STREAM_FAILED"
+
+
+def test_query_condition_prefers_top_level_modern_spark_accessor() -> None:
+    class ModernError(RuntimeError):
+        def getCondition(self) -> str:  # noqa: N802
+            return "MODERN_CONDITION"
+
+        def getErrorClass(self) -> str:  # noqa: N802
+            return "LEGACY_CONDITION"
+
+    assert _query_condition(ModernError("failure")) == "MODERN_CONDITION"
+
+
+def test_query_condition_reads_legacy_spark_accessor_without_causes() -> None:
+    class LegacyError(RuntimeError):
+        def getErrorClass(self) -> str:  # noqa: N802
+            return "LEGACY_CONDITION"
+
+    error = LegacyError("failure")
+    error.__cause__ = _QueryFailureError("nested")
+
+    assert _query_condition(error) == "LEGACY_CONDITION"
+    assert _query_condition(RuntimeError("unclassified")) is None
+
+
+def test_query_condition_does_not_invent_absent_metadata() -> None:
+    class NullConditionError(RuntimeError):
+        def getCondition(self) -> None:  # noqa: N802
+            return None
+
+        def getErrorClass(self) -> str:  # noqa: N802
+            return "SHOULD_NOT_BE_USED"
+
+    assert _query_condition(NullConditionError("failure")) is None
+
+
+def test_query_condition_rejects_invalid_accessors_and_values() -> None:
+    class NonCallableError(RuntimeError):
+        getCondition = "not-callable"  # noqa: N815
+
+    class WrongValueError(RuntimeError):
+        def getCondition(self) -> int:  # noqa: N802
+            return 12
+
+    with pytest.raises(TypeError, match="accessor is not callable"):
+        _query_condition(NonCallableError("failure"))
+    with pytest.raises(TypeError, match="condition must be a string or None"):
+        _query_condition(WrongValueError("failure"))
+
+
+class _TerminatingQuery(_FakeQuery):
+    def __init__(self, directories: RunDirectories, *, fail_after: int = 0) -> None:
+        super().__init__(directories)
+        self.fail_after = fail_after
+        self.failure: Exception = _QueryFailureError("pipeline marker")
+        self.wrapper = RuntimeError("Spark wrapped the query failure")
+
+    def processAllAvailable(self) -> None:  # noqa: N802
+        if len(self.processed) == self.fail_after:
+            self.isActive = False
+            self.query_error = self.failure
+            raise self.wrapper from self.failure
+        super().processAllAvailable()
+
+
+def test_expected_failure_returns_completed_partial_result_after_cleanup(
+    run_directories: RunDirectories,
+) -> None:
+    query = _TerminatingQuery(run_directories, fail_after=1)
+    capture = _BatchCapture()
+
+    result = _execute_batches(
+        cast(Any, _FakeStream(query)),
+        scenario(
+            batch({"id": 1}),
+            expect_failure(
+                batch({"id": 2}),
+                message_contains="pipeline marker",
+                condition="STREAM_FAILED",
+            ),
+        ),
+        run_directories,
+        capture,
+    )
+
+    assert result.rows == ({"id": 1},)
+    assert [(item.action_index, item.batch_id) for item in result.progress] == [(0, 0)]
+    assert result.failure == FailureObservation(
+        1, message="pipeline marker", condition="STREAM_FAILED"
+    )
+    assert query.stop_calls == 1
+    assert len(capture.snapshot()) == 1
+
+
+def test_expected_failure_without_condition_uses_message_only(
+    run_directories: RunDirectories,
+) -> None:
+    query = _TerminatingQuery(run_directories)
+    query.failure = RuntimeError("pipeline marker")
+
+    result = _execute_batches(
+        cast(Any, _FakeStream(query)),
+        scenario(expect_failure(batch({"id": 1}), message_contains="pipeline marker")),
+        run_directories,
+        _BatchCapture(),
+    )
+
+    assert result.failure is not None
+    assert result.failure.condition is None
+    assert result.batches == ()
+    assert result.progress == ()
+
+
+def test_expected_failure_wrong_message_remains_an_action_failure(
+    run_directories: RunDirectories,
+) -> None:
+    query = _TerminatingQuery(run_directories)
+
+    with pytest.raises(RuntimeError, match="did not match its selectors") as error_info:
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(expect_failure(batch({"id": 1}), message_contains="different marker")),
+            run_directories,
+            _BatchCapture(),
+        )
+
+    assert error_info.value.__cause__ is query.wrapper
+    assert query.stop_calls == 1
+
+
+def test_expected_failure_wrong_condition_remains_an_action_failure(
+    run_directories: RunDirectories,
+) -> None:
+    query = _TerminatingQuery(run_directories)
+
+    with pytest.raises(RuntimeError, match="did not match its selectors"):
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(expect_failure(batch({"id": 1}), condition="OTHER_CONDITION")),
+            run_directories,
+            _BatchCapture(),
+        )
+
+
+def test_expected_failure_does_not_accept_a_failure_at_an_earlier_batch(
+    run_directories: RunDirectories,
+) -> None:
+    query = _TerminatingQuery(run_directories)
+
+    with pytest.raises(RuntimeError, match="Batch action at index 0 failed"):
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(
+                batch({"id": 1}),
+                expect_failure(batch({"id": 2}), message_contains="pipeline marker"),
+            ),
+            run_directories,
+            _BatchCapture(),
+        )
+
+    assert query.stop_calls == 1
+
+
+def test_processing_error_while_query_stays_active_is_not_expected(
+    run_directories: RunDirectories,
+) -> None:
+    query = _FakeQuery(run_directories)
+    query.process_error = RuntimeError("pipeline marker")
+
+    with pytest.raises(RuntimeError, match="query stayed active") as error_info:
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(expect_failure(batch({"id": 1}), message_contains="pipeline marker")),
+            run_directories,
+            _BatchCapture(),
+        )
+
+    assert error_info.value.__cause__ is query.process_error
+
+
+def test_inactive_query_without_failure_is_not_accepted(
+    run_directories: RunDirectories,
+) -> None:
+    query = _FakeQuery(run_directories)
+    query.terminate_during_processing = True
+
+    with pytest.raises(RuntimeError, match="stopped without a query exception"):
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(expect_failure(batch({"id": 1}), message_contains="marker")),
+            run_directories,
+            _BatchCapture(),
+        )
+
+
+def test_expected_failure_cleanup_error_does_not_return_a_passing_result(
+    run_directories: RunDirectories,
+) -> None:
+    query = _TerminatingQuery(run_directories)
+    query.stop_error = OSError("owned query stop failed")
+
+    with pytest.raises(OSError, match="owned query stop failed"):
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(expect_failure(batch({"id": 1}), message_contains="pipeline marker")),
+            run_directories,
+            _BatchCapture(),
+        )
+
+    assert query.stop_calls == 1
+
+
+def test_expected_failure_input_serialization_error_is_not_matched(
+    run_directories: RunDirectories,
+) -> None:
+    query = _FakeQuery(run_directories)
+
+    with pytest.raises(RuntimeError, match="failed before query processing") as error_info:
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(expect_failure(batch({"bad": object()}), message_contains="marker")),
+            run_directories,
+            _BatchCapture(),
+        )
+
+    assert isinstance(error_info.value.__cause__, TypeError)
+    assert query.processed == []
+    assert query.stop_calls == 1
+
+
+def test_expected_failure_input_limit_is_never_matched(
+    run_directories: RunDirectories,
+) -> None:
+    query = _FakeQuery(run_directories)
+
+    with pytest.raises(ScenarioLimitError, match="input_bytes_per_batch"):
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(expect_failure(batch({"id": 1}), message_contains="marker")),
+            run_directories,
+            _BatchCapture(),
+            max_input_bytes_per_batch=1,
+        )
+
+    assert query.processed == []
+
+
+class _CallbackTerminatingQuery(_FakeQuery):
+    def __init__(self, directories: RunDirectories, frame: object) -> None:
+        super().__init__(directories)
+        self.frame = frame
+        self.wrapper = RuntimeError("Spark wrapped callback failure")
+
+    def processAllAvailable(self) -> None:  # noqa: N802
+        assert self.callback is not None
+        try:
+            self.callback(cast(Any, self.frame), 0)
+        except Exception as error:
+            self.query_error = RuntimeError("pipeline marker")
+            self.isActive = False
+            raise self.wrapper from error
+
+
+def test_spark_evaluation_error_inside_callback_can_match(
+    run_directories: RunDirectories,
+) -> None:
+    class FailingFrame:
+        def collect(self) -> None:
+            raise RuntimeError("pipeline marker")
+
+    query = _CallbackTerminatingQuery(run_directories, FailingFrame())
+    capture = _BatchCapture()
+
+    result = _execute_batches(
+        cast(Any, _FakeStream(query)),
+        scenario(expect_failure(batch({"id": 1}), message_contains="pipeline marker")),
+        run_directories,
+        capture,
+    )
+
+    assert result.failure is not None
+    assert result.failure.action_index == 0
+    assert result.batches == ()
+    callback_failure = capture.callback_failure()
+    assert callback_failure is not None
+    assert callback_failure[1] == "evaluation"
+
+
+def test_streamcase_capture_normalization_error_cannot_match(
+    run_directories: RunDirectories,
+) -> None:
+    query = _CallbackTerminatingQuery(
+        run_directories, _FakeDataFrame([_FakeRow({"unsupported": object()})])
+    )
+
+    with pytest.raises(RuntimeError, match="inside Streamcase capture") as error_info:
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(expect_failure(batch({"id": 1}), message_contains="pipeline marker")),
+            run_directories,
+            _BatchCapture(),
+        )
+
+    assert isinstance(error_info.value.__cause__, TypeError)
+
+
+def test_spark_wrapped_output_limit_cannot_match(
+    run_directories: RunDirectories,
+) -> None:
+    query = _CallbackTerminatingQuery(
+        run_directories, _FakeDataFrame([_FakeRow({"id": 1}), _FakeRow({"id": 2})])
+    )
+
+    with pytest.raises(ScenarioLimitError, match="output_rows") as error_info:
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(expect_failure(batch({"id": 1}), message_contains="pipeline marker")),
+            run_directories,
+            _BatchCapture(max_output_rows=1),
+        )
+
+    assert error_info.value.__cause__ is query.wrapper
+
+
+def test_unwrapped_output_limit_cannot_match(
+    run_directories: RunDirectories,
+) -> None:
+    class SuppressingQuery(_CallbackTerminatingQuery):
+        def processAllAvailable(self) -> None:  # noqa: N802
+            try:
+                super().processAllAvailable()
+            except RuntimeError:
+                return
+
+    query = SuppressingQuery(
+        run_directories, _FakeDataFrame([_FakeRow({"id": 1}), _FakeRow({"id": 2})])
+    )
+
+    with pytest.raises(ScenarioLimitError, match="output_rows") as error_info:
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(expect_failure(batch({"id": 1}), message_contains="pipeline marker")),
+            run_directories,
+            _BatchCapture(max_output_rows=1),
+        )
+
+    assert error_info.value.__cause__ is None
+
+
+def test_stale_callback_failure_cannot_match(
+    run_directories: RunDirectories,
+) -> None:
+    class StaleCapture(_BatchCapture):
+        def callback_failure(self) -> tuple[int, Literal["evaluation", "capture"], Exception]:
+            return (99, "evaluation", RuntimeError("stale callback"))
+
+    query = _TerminatingQuery(run_directories)
+
+    with pytest.raises(RuntimeError, match="inside Streamcase capture"):
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(expect_failure(batch({"id": 1}), message_contains="pipeline marker")),
+            run_directories,
+            StaleCapture(),
+        )
+
+
+def test_query_inspection_error_cannot_match(
+    run_directories: RunDirectories,
+) -> None:
+    class BrokenQuery(_FakeQuery):
+        def exception(self) -> Exception | None:
+            raise OSError("query inspection failed")
+
+    query = BrokenQuery(run_directories)
+    query.terminate_during_processing = True
+
+    with pytest.raises(RuntimeError, match="Could not inspect the owned query") as error_info:
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(expect_failure(batch({"id": 1}), message_contains="marker")),
+            run_directories,
+            _BatchCapture(),
+        )
+
+    assert isinstance(error_info.value.__cause__, OSError)
+
+
+def test_inactive_query_with_processing_error_but_no_query_exception_is_unexpected(
+    run_directories: RunDirectories,
+) -> None:
+    class BrokenQuery(_FakeQuery):
+        def processAllAvailable(self) -> None:  # noqa: N802
+            self.isActive = False
+            raise RuntimeError("processing marker")
+
+    query = BrokenQuery(run_directories)
+
+    with pytest.raises(RuntimeError, match="failed without a query exception") as error_info:
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(expect_failure(batch({"id": 1}), message_contains="processing marker")),
+            run_directories,
+            _BatchCapture(),
+        )
+
+    assert str(error_info.value.__cause__) == "processing marker"
+
+
+def test_owned_query_must_return_an_exception_object(
+    run_directories: RunDirectories,
+) -> None:
+    class BrokenQuery(_FakeQuery):
+        def exception(self) -> Exception | None:
+            return cast(Exception, "not an exception")
+
+    query = BrokenQuery(run_directories)
+    query.terminate_during_processing = True
+
+    with pytest.raises(TypeError, match="non-exception failure object"):
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(expect_failure(batch({"id": 1}), message_contains="marker")),
+            run_directories,
+            _BatchCapture(),
+        )
+
+
+def test_unreadable_query_exception_cannot_match(
+    run_directories: RunDirectories,
+) -> None:
+    class UnreadableError(RuntimeError):
+        def __str__(self) -> str:
+            raise OSError("cannot render query failure")
+
+    query = _TerminatingQuery(run_directories)
+    query.failure = UnreadableError()
+
+    with pytest.raises(RuntimeError, match="Could not read the owned query failure"):
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(expect_failure(batch({"id": 1}), message_contains="marker")),
+            run_directories,
+            _BatchCapture(),
+        )
+
+
+def test_nonmatching_silent_query_failure_chains_query_exception(
+    run_directories: RunDirectories,
+) -> None:
+    class SilentFailureQuery(_FakeQuery):
+        def processAllAvailable(self) -> None:  # noqa: N802
+            self.isActive = False
+            self.query_error = RuntimeError("actual marker")
+
+    query = SilentFailureQuery(run_directories)
+
+    with pytest.raises(RuntimeError, match="did not match its selectors") as error_info:
+        _execute_batches(
+            cast(Any, _FakeStream(query)),
+            scenario(expect_failure(batch({"id": 1}), message_contains="wrong marker")),
+            run_directories,
+            _BatchCapture(),
+        )
+
+    assert error_info.value.__cause__ is query.query_error
 
 
 @pytest.mark.parametrize("mode", ["complete", "update"])
