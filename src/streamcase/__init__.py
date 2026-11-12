@@ -1,5 +1,6 @@
 """Deterministic testing for Apache Spark Structured Streaming."""
 
+from streamcase._failure_assertions import assert_failure
 from streamcase._progress_assertions import (
     assert_input_row_count,
     assert_state_metric,
@@ -29,6 +30,7 @@ __all__ = [
     "ScenarioResult",
     "__version__",
     "assert_batch_count",
+    "assert_failure",
     "assert_input_row_count",
     "assert_rows_equal",
     "assert_state_metric",
