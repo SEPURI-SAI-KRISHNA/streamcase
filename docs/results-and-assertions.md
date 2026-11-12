@@ -101,7 +101,56 @@ For a matched failure, the model can hold only fully completed captured batches
 and progress in their original order; it makes no claim about incomplete
 callbacks or progress from the failed action. See the
 [expected-failure design](design/0007-expected-streaming-failure.md) for the
-pending runner contract.
+runner contract.
+
+### Expected-failure assertion
+
+`assert_failure(result, *, action_index, kind="query_terminated",
+condition=None, message_contains=None)` checks a matched negative result. The
+action index and fixed `query_terminated` classification are the portable
+fields. A non-empty `condition` matches the **top-level** condition only when
+Spark supplied one; conditions can differ by Spark version and operation. A
+non-empty `message_contains` checks the observation's 1,024-character preview,
+not the raw Spark exception. Prefer a short marker that your transformation
+controls. Do not assert entire Spark error messages or stack traces.
+
+```python
+from streamcase import assert_failure, assert_rows_equal, batch, expect_failure, scenario
+from streamcase.spark import run_scenario
+
+
+def test_rejected_record(spark_session, tmp_path):
+    marker = "MY_TEST_BAD_RECORD"
+
+    def reject_bad(source):
+        return source.selectExpr(
+            f"CASE WHEN value = 'bad' THEN raise_error('{marker}') ELSE value END AS value"
+        )
+
+    result = run_scenario(
+        spark_session,
+        scenario(
+            batch({"value": "good"}),
+            expect_failure(batch({"value": "bad"}), message_contains=marker),
+        ),
+        schema="value STRING",
+        transform=reject_bad,
+        base_dir=tmp_path,
+    )
+    assert_rows_equal(result, [{"value": "good"}])
+    assert_failure(result, action_index=1, message_contains=marker)
+```
+
+Here `spark_session` is the caller-owned fixture shown in the
+[pytest integration guide](pytest-integration.md). The example is for the
+current source checkout; published 0.2.0a1 has no expected-failure API. If the
+declared failure never occurs, `run_scenario` raises
+`ExpectedFailureNotObservedError` before an assertion can inspect a result. An
+absent observation in a manually constructed `ScenarioResult` and any mismatch
+raise `AssertionError` with concise expected/actual values. Invalid expected
+values raise `TypeError` or `ValueError`. Diagnostics do not print the full
+observed message, but a marker supplied by a caller may still contain sensitive
+data. Keep markers non-sensitive.
 
 Batch identifiers do not need to be consecutive. The runner owns their
 relationship to Spark micro-batch identifiers, including across restarts.

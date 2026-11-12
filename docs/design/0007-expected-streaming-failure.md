@@ -169,8 +169,9 @@ continue to block rather than be declared a missing expected failure.
   error without importing PySpark.
 - #175 integrates query-specific matching into the runner, with private
   callback-error provenance and cleanup precedence.
-- #176 adds backend-independent assertions over action index and observed
-  classification, without treating Spark prose as a stable taxonomy.
+- #176 adds backend-independent `assert_failure` over action index, observed
+  classification, and optional bounded fields without treating Spark prose as
+  a stable taxonomy.
 - #177 exercises successful, missing, wrong-action, wrong-selector, partial,
   restart, limit, and cleanup cases on Spark 3.5 and 4.2.
 - #178 publishes a runnable pytest example and user-facing limitations.
