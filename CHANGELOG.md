@@ -17,6 +17,9 @@ All notable changes will be documented in this file. The format is based on
   when the owned Spark query terminates at that action and its selectors match.
   Missing, mismatched, capture, limit, and cleanup failures remain errors.
   This is not in the published 0.2.0a1 package.
+- Backend-independent `assert_failure` checks the observed action, stable
+  query-termination kind, and optional top-level condition or bounded message
+  marker. Spark exception prose is not treated as a stable contract.
 
 ### Documentation
 
