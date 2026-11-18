@@ -111,8 +111,13 @@ action index and fixed `query_terminated` classification are the portable
 fields. A non-empty `condition` matches the **top-level** condition only when
 Spark supplied one; conditions can differ by Spark version and operation. A
 non-empty `message_contains` checks the observation's 1,024-character preview,
-not the raw Spark exception. Prefer a short marker that your transformation
-controls. Do not assert entire Spark error messages or stack traces.
+not the raw Spark exception. Put a distinctive, caller-controlled marker in the
+`expect_failure(...)` declaration: the runner matches that against the full
+owned-query exception. Spark can prepend enough wrapper diagnostics to push the
+marker beyond the returned preview, so do not assume it can also be checked
+with `assert_failure(..., message_contains=...)`. Use that optional assertion
+only when the specific preview content is part of your test's contract. Do not
+assert entire Spark error messages or stack traces.
 
 ```python
 from streamcase import assert_failure, assert_rows_equal, batch, expect_failure, scenario
@@ -138,7 +143,7 @@ def test_rejected_record(spark_session, tmp_path):
         base_dir=tmp_path,
     )
     assert_rows_equal(result, [{"value": "good"}])
-    assert_failure(result, action_index=1, message_contains=marker)
+    assert_failure(result, action_index=1)
 ```
 
 Here `spark_session` is the caller-owned fixture shown in the

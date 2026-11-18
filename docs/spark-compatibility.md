@@ -39,8 +39,10 @@ The Spark 3.5 and 4.2 jobs run the same expected-failure contract tests from an
 installed wheel. They cover a failing first action, ordered partial captures
 and progress across a checkpoint-preserving restart, wrong-action and setup
 errors, input limits, cleanup-failure precedence, retained artifacts, and
-unrelated-query/session ownership. The tests use a caller-controlled marker;
-they do not assert a full Spark exception or stack trace. The portable public
+unrelated-query/session ownership. The tests match a caller-controlled marker
+in the declaration, not in the bounded result preview: Spark's wrapper can put
+the marker beyond that preview on both lines. They do not assert a full Spark
+exception or stack trace. The portable public
 observation is the zero-based action index and `query_terminated` kind.
 Top-level conditions are recorded only when Spark supplies them, and Spark's
 message wording is not normalized or treated as a cross-version promise.
