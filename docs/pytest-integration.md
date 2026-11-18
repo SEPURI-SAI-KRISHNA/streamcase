@@ -127,3 +127,7 @@ without installing PySpark or registering the plugin. Registering the plugin
 requires pytest but does not import PySpark until the runner callable is
 invoked. For the design and ownership rationale, see
 [ADR 0004](design/0004-pytest-integration.md).
+
+For a negative streaming test using the current source checkout, see the
+[runnable expected-failure example](expected-failures.md). Its public
+`ExpectFailure` API is not available in the published 0.2.0a1 package.
