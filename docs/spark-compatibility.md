@@ -33,6 +33,19 @@ including the version check, from the installed wheel.
 The ordinary quality job smoke-tests both distributions without PySpark; unit
 and Python compatibility jobs exclude tests marked `spark`.
 
+### Source-checkout expected-failure evidence
+
+The Spark 3.5 and 4.2 jobs run the same expected-failure contract tests from an
+installed wheel. They cover a failing first action, ordered partial captures
+and progress across a checkpoint-preserving restart, wrong-action and setup
+errors, input limits, cleanup-failure precedence, retained artifacts, and
+unrelated-query/session ownership. The tests use a caller-controlled marker;
+they do not assert a full Spark exception or stack trace. The portable public
+observation is the zero-based action index and `query_terminated` kind.
+Top-level conditions are recorded only when Spark supplies them, and Spark's
+message wording is not normalized or treated as a cross-version promise.
+These source-checkout features are absent from published 0.2.0a1.
+
 Apache Spark 4.2 supports Python 3.10 or newer and Java 17, 21, and 25; Spark
 3.5 supports Python 3.8 or newer and Java 8, 11, and 17. Streamcase uses the
 smaller matrix above so each advertised runner combination is verified in CI.
