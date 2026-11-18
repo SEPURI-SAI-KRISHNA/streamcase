@@ -78,6 +78,8 @@ capture-normalization, limit, restart, and cleanup errors remain test failures,
 even if their text resembles a marker. This feature is absent from published
 0.2.0a1. See the
 [declaration guide](scenario-model.md#expected-failure-declaration-source-checkout-only).
+The [expected-failure pytest guide](expected-failures.md) runs this contract
+against both supported Spark lines in CI.
 
 `schema` is a non-empty Spark DDL string or `StructType`. `transform` receives
 the streaming JSON input DataFrame and must return a streaming DataFrame from

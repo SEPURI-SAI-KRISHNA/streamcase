@@ -23,6 +23,9 @@ All notable changes will be documented in this file. The format is based on
 
 ### Documentation
 
+- Add a copyable, CI-executed expected-failure pytest example for both
+  supported Spark lines, with source-versus-published guidance and bounded
+  partial-result and cleanup limitations.
 - Record the Spark 3.5/4.2 deadline feasibility no-go. No runner or pytest
   `timeout`/`deadline` argument is offered: a timed wait cannot guarantee
   query cancellation or cleanup. See [ADR 0006](docs/design/0006-spark-deadline-feasibility.md).

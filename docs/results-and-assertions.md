@@ -101,7 +101,8 @@ For a matched failure, the model can hold only fully completed captured batches
 and progress in their original order; it makes no claim about incomplete
 callbacks or progress from the failed action. See the
 [expected-failure design](design/0007-expected-streaming-failure.md) for the
-runner contract.
+runner contract and the [runnable pytest guide](expected-failures.md) for an
+installed-checkout example.
 
 ### Expected-failure assertion
 

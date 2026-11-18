@@ -74,6 +74,10 @@ session. It also offers an opt-in pytest runner fixture. See the
 [two-batch Spark quick start and runner contract](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/spark-runner.md) and
 [checkpoint restart example](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/restart-scenarios.md),
 and [pytest integration guide](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/pytest-integration.md).
+The current source checkout also has an
+[expected-failure pytest guide](https://github.com/SEPURI-SAI-KRISHNA/streamcase/blob/main/docs/expected-failures.md)
+for an API planned for a future prerelease; that API is not in the published
+0.2.0a1 package.
 
 ## Repository status
 
