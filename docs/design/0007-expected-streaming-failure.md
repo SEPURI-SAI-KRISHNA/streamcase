@@ -103,9 +103,12 @@ capped at 1,024 Unicode code points after CRLF and CR normalization to LF;
 `truncated` states whether text was omitted. The top-level `condition`, when
 present, is capped at 256 characters and is rejected rather than truncated if
 oversized. `message` is excluded from automatic object `repr`, but remains
-directly accessible. The model accepts plain text only and does not traverse
-nested exception causes. The runner will decide how to extract the top-level
-query text; it must not copy arbitrary traceback objects into the result. The
+directly accessible. The runner matches the declaration against the full
+owned-query exception **before** constructing this bounded preview. Spark may
+place the matched marker beyond the first 1,024 characters of wrapper text, so
+the returned `message` is not guaranteed to contain it. The model accepts
+plain text only and does not traverse nested exception causes. The runner must
+not copy arbitrary traceback objects into the result. The
 object contains no raw exception, traceback, DataFrame, query, JVM handle, or
 mutable Spark collection. Exception text can still contain sensitive user
 data; tests should use synthetic inputs and must not treat this field as a

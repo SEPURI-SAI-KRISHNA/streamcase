@@ -1,4 +1,9 @@
-"""Real-Spark evidence for expected-failure ownership and partial results."""
+"""Real-Spark evidence for expected-failure ownership and partial results.
+
+The declaration matches the full owned-query exception. Result assertions do
+not require its marker in the bounded preview: Spark may put it past the first
+1,024 characters of wrapper diagnostics on either supported line.
+"""
 
 from __future__ import annotations
 
@@ -79,7 +84,7 @@ def test_first_action_failure_has_no_completed_captures(
 
     assert result.batches == ()
     assert result.progress == ()
-    assert_failure(result, action_index=0, message_contains=_MARKER)
+    assert_failure(result, action_index=0)
     _assert_no_runner_leaks(spark, tmp_path, before)
 
 
@@ -103,7 +108,7 @@ def test_failure_after_completed_batch_preserves_only_prior_rows_and_progress(
     assert_rows_equal(result, [{"value": "good"}])
     assert [item.batch_id for item in result.batches] == [0]
     assert [(item.action_index, item.trigger_index) for item in result.progress] == [(0, 0)]
-    assert_failure(result, action_index=1, message_contains=_MARKER)
+    assert_failure(result, action_index=1)
     _assert_no_runner_leaks(spark, tmp_path, before)
 
 
@@ -160,7 +165,7 @@ def test_partial_results_retain_order_across_restart_and_preserve_other_query(
             (1, 0, 1),
             (3, 0, 2),
         ]
-        assert_failure(result, action_index=4, message_contains=_MARKER)
+        assert_failure(result, action_index=4)
         assert len(owned) == 2
         assert len({query.id for query in owned}) == 1
         assert len({query.runId for query in owned}) == 2

@@ -55,7 +55,8 @@ def assert_failure(
     """Assert a matched query failure's action, kind, and optional fields.
 
     ``message_contains`` checks the bounded diagnostic preview, not a Spark
-    exception or stack trace. Prefer a caller-controlled marker to Spark prose.
+    exception or stack trace. A caller marker may fall outside that preview;
+    match it in the ``expect_failure`` declaration for full-query checking.
     """
     if not isinstance(result, ScenarioResult):
         raise TypeError(f"result must be a ScenarioResult; got {type(result).__name__}.")
